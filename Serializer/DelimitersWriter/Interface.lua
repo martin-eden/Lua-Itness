@@ -10,137 +10,217 @@
 
       Output implementer.
 
-    StartList_Before
-    StartList_After
-    EndList_Before
-    EndList_After
-      (self, List: table)
+    Key_StartList_Before
+    Key_StartList_After
+    Value_StartList_Before
+    Value_StartList_After
 
-      Event handlers before and after starting and ending sequence.
+    Key_EndList_Before
+    Key_EndList_After
+    Value_EndList_Before
+    Value_EndList_After
+      (self, Node: table/str)
 
-    WriteNode_Before
-    WriteNode_After
-      (self, NodeIndex: int, Node: table/str)
+      Event handlers for opening/closing list.
 
-      Event handler for writing element.
+    Key_WriteString_Before
+    Key_WriteString_After
+    Value_WriteString_Before
+    Value_WriteString_After
+      (self, Node: table/str)
+
+      Event handlers for writing element.
 
     /*
       I would prefer to design "before" and "after" families as
-      subtables, but then you need to call event handler like
-      "DelimWriter.StartList.Before(DelimWriter, List)", versus
-      "DelimWriter:StartList_Before(List)".
+      subtables, but then you explicitly to manually pass "self"
+      and call event handler like
+      "DelimWriter.StartList.Before(DelimWriter, ...)", versus
+      "DelimWriter:StartList_Before(...)".
+    */
+
+    /*
+      That awfully long list of handlers!
+
+      Well, my use case is representing Lua tables which are sequenced
+      as "key (value)" pairs. I want "<indent>key (<newline>" for the
+      key part. Both "key" and "value" can be strings or lists. So
+      what is "key" is determined by element position in parent list.
+
+      I can cut those 12 handlers to 6 by passing position, but
+      I prefer this way. Extensive dumbness is more manageable than
+      compacted trickery.
     */
 ]]
 
---[[
-  Implementation
-
-    We are storing state in "self".
-
-    Currently we are tracking last event and list length.
-]]
+-- Internal: indentation tracker
+local Indent = request('!.concepts.Indent.Interface')
+Indent:Init(0, '  ')
 
 return
   {
     -- Output implementer. Set to concrete for practical use
     Output = request('!.concepts.StreamIo.Output'),
 
-    -- Internal: last event: (StartList, EndList, WriteNode)
-    LastEvent = nil,
-    -- Internal: sequence length
-    ListLength = nil,
+    -- Internal: indentation tracker
+    Indent = Indent,
+
+    -- Writing node events:
+    Element_WriteString_Before =
+      function(self, Node)
+        -- self:Emit('[Element_WriteString_Before]')
+      end,
+
+    Element_WriteString_After =
+      function(self, Node)
+        -- self:Emit('[Element_WriteString_After]')
+        -- self:EmitIndent()
+      end,
+
+    Key_WriteString_Before =
+      function(self, Node)
+        -- self:Emit('[Key_WriteString_Before]')
+        self:EmitNewline()
+        self:EmitIndent()
+      end,
+
+    Key_WriteString_After =
+      function(self, Node)
+        -- self:Emit('[Key_WriteString_After]')
+        self:Emit(' ')
+      end,
+
+    Value_WriteString_Before =
+      function(self, Node)
+        -- self:Emit('[]')
+        self:EmitIndent()
+      end,
+
+    Value_WriteString_After =
+      function(self)
+        -- self:Emit('[Value_WriteString_After]')
+      end,
 
     -- Opening list sequence events:
-    StartList_Before =
-      function(self, List)
-        -- print('StartList_Before')
-        if
-          (self.LastEvent == 'WriteNode') or
-          (self.LastEvent == 'EndList')
-        then
-          self.Output:Write(' ')
-        end
+    Element_StartList_Before =
+      function(self, Node)
+        -- self:Emit('[Element_StartList_Before]')
+        self:EmitNewline()
+        self:EmitIndent()
       end,
-    --
-    StartList_After =
-      function(self, List)
-        -- print('StartList_After')
-        self.LastEvent = 'StartList'
-        self.ListLength = #List
+
+    Key_StartList_Before =
+      function(self, Node)
+        -- self:Emit('[Key_StartList_Before]')
+        self:EmitNewline()
+        self:EmitIndent()
+      end,
+
+    Value_StartList_Before =
+      function(self, Node)
+        -- self:Emit('[Value_StartList_Before]')
+      end,
+
+    Element_StartList_After =
+      function(self, Node)
+        -- self:Emit('[Element_StartList_After]')
+        -- self:EmitNewline()
+        self.Indent:Increase()
+      end,
+
+    Key_StartList_After =
+      function(self, Node)
+        -- self:Emit('[Key_StartList_After]')
+        -- self:EmitNewline()
+        self.Indent:Increase()
+      end,
+
+    Value_StartList_After =
+      function(self, Node)
+        -- self:Emit('[Value_StartList_After]')
+        -- self:EmitNewline()
+        self.Indent:Increase()
       end,
 
     -- Closing list sequence events:
-    EndList_Before =
-      function(self, List)
-      end,
-    --
-    EndList_After =
-      function(self, List)
-        if self:IsValue() then
-          -- Value list ends line:
-          self.Output:Write('\n')
-        end
+    Element_EndList_Before =
+      function(self, Node)
+        -- self:Emit('[Element_EndList_Before]')
 
-        self.LastEvent = 'EndList'
-        self.ListLength = nil
+        self.Indent:Decrease()
+
+        self:EmitNewline()
+        self:EmitIndent()
       end,
 
-    -- Writing node events:
-    WriteNode_Before =
-      function(self, NodeIndex, Node)
-        if self:IsKey(NodeIndex) then
-          -- Key starts from a new line:
-          self.Output:Write('\n')
+    Element_EndList_After =
+      function(self, Node)
+        -- self:Emit('[Element_EndList_After]')
+
+        self:EmitNewline()
+      end,
+
+    Key_EndList_Before =
+      function(self, Node)
+        -- self:Emit('[Key_EndList_Before]')
+
+        self.Indent:Decrease()
+        self:EmitIndent()
+      end,
+
+    Value_EndList_Before =
+      function(self, Node)
+        -- self:Emit('[Value_EndList_Before]')
+
+        self.Indent:Decrease()
+
+        self:EmitNewline()
+
+        -- self:EmitIndent()
+      end,
+
+    Value_EndList_After =
+      function(self, Node)
+        -- self:Emit('[Value_EndList_After]')
+        self:EmitNewline()
+      end,
+
+    Key_EndList_After =
+      function(self, Node)
+        -- self:Emit('[Key_EndList_After]')
+        self:Emit(' ')
+      end,
+
+    --[[
+      Side functionality: not-empty-liner
+
+      I don't want empty lines in generated text. So no '\n\n'.
+      But newline logic is scattered among event handlers.
+    ]]
+    -- Empty line flag
+    IsOnEmptyLine = true,
+
+    -- Write string (hopefully without newlines)
+    Emit =
+      function(self, s)
+        self.Output:Write(s)
+        self.IsOnEmptyLine = false
+      end,
+
+    -- Assure that next string will be written on new line
+    EmitNewline =
+      function(self)
+        if self.IsOnEmptyLine then
           return
         end
-    end,
-    --
-    WriteNode_After =
-      function(self, NodeIndex, Node)
-        self.LastEvent = 'WriteNode'
+        self:Emit('\n')
+        self.IsOnEmptyLine = true
       end,
 
-    -- Internal:
-    -- Node looks like a key?
-    IsKey =
-      function(self, NodeIndex)
-        --[[
-          Node looks like key in sequence of key-value tuples?
-
-          { a = 'b' } is sequenced to {'a', {'b'}}
-
-          So key should be in odd position and length of table
-          is even and more than zero.
-        ]]
-        local IsKey =
-          (NodeIndex % 2 == 1) and
-          (self.ListLength % 2 == 0) and
-          (self.ListLength > 0)
-
-        --[[
-        if IsKey then
-          print('IsKey')
-          print(NodeIndex)
-        end
-        --]]
-
-        return IsKey
-      end,
-
-    -- List looks like a value?
-    IsValue =
+    -- Just emit indent string as we have access to internals
+    EmitIndent =
       function(self)
-        --  That means we are in table with one element.
-        local IsValue = (self.ListLength == 1)
-
-        --[[
-        if IsValue then
-          print('IsValue')
-          print(self.ListLength)
-        end
-        --]]
-
-        return IsValue
+        self:Emit(self.Indent:GetString())
       end,
   }
 
