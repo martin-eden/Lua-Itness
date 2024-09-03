@@ -20,43 +20,90 @@ local DataWriter = request('DataWriter.Interface')
 local Indenter = request('DelimitersWriter.Interface')
 
 --[[
-  Serialize tree node
+  Serialize tree node dispatcher
 
   Input
-    Node (string or table)
+
+    Node: string or table
+
+    NodeType: str: (Element, Key, Value)
+
 
   Output
-    none
+
+    Uses output class.
 ]]
 local Serialize
 Serialize =
-  function(NodeIndex, Node)
+  function(Node, NodeType)
     if is_string(Node) then
-      Indenter:WriteNode_Before(NodeIndex, Node)
-      DataWriter:WriteData(Node)
-      Indenter:WriteNode_After(NodeIndex, Node)
-    elseif is_table(Node) then
-      --[[
-        Indenter implementation tracks node index.
-        So before going to process sublist we should store
-        current state.
-      ]]
-      local OurIndenter = Indenter
-      Indenter = new(Indenter)
-
-      Indenter:StartList_Before(Node)
-      DataWriter:StartList()
-      Indenter:StartList_After(Node)
-
-      for Index, Value in ipairs(Node) do
-        Serialize(Index, Value)
+      if (NodeType == 'Element') then
+        Indenter:Element_WriteString_Before()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_WriteString_Before()
+      else
+        Indenter:Value_WriteString_Before()
       end
 
-      Indenter:EndList_Before(Node)
-      DataWriter:EndList()
-      Indenter:EndList_After(Node)
+      DataWriter:WriteData(Node)
 
-      Indenter = OurIndenter
+      if (NodeType == 'Element') then
+        Indenter:Element_WriteString_After()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_WriteString_After()
+      else
+        Indenter:Value_WriteString_After()
+      end
+
+    elseif is_table(Node) then
+      if (NodeType == 'Element') then
+        Indenter:Element_StartList_Before()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_StartList_Before()
+      else
+        Indenter:Value_StartList_Before()
+      end
+
+      DataWriter:StartList()
+
+      if (NodeType == 'Element') then
+        Indenter:Element_StartList_After()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_StartList_After()
+      else
+        Indenter:Value_StartList_After()
+      end
+
+      for Index, Entity in ipairs(Node) do
+        local EntityType
+        if (#Node == 1) then
+          EntityType = 'Element'
+        elseif (Index % 2 == 1) then
+          EntityType = 'Key'
+        else
+          EntityType = 'Value'
+        end
+
+        Serialize(Entity, EntityType)
+      end
+
+      if (NodeType == 'Element') then
+        Indenter:Element_EndList_Before()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_EndList_Before()
+      else
+        Indenter:Value_EndList_Before()
+      end
+
+      DataWriter:EndList()
+
+      if (NodeType == 'Element') then
+        Indenter:Element_EndList_After()
+      elseif (NodeType == 'Key') then
+        Indenter:Key_EndList_After()
+      else
+        Indenter:Value_EndList_After()
+      end
     end
   end
 
@@ -79,9 +126,7 @@ local SerializeWrapper =
     DataWriter.Output = Writer
     Indenter.Output = Writer
 
-    Serialize(1, Tree)
-
-    Writer:Write('\n')
+    Serialize(Tree, 'Element')
   end
 
 -- Exports:
