@@ -19,6 +19,58 @@ local DataWriter = request('DataWriter.Interface')
 -- Indenter
 local Indenter = request('DelimitersWriter.Interface')
 
+
+-- Get element type
+--[[
+  Interface
+
+    (table/string): string (= String, Container)
+]]
+local GetElementType =
+  function(Node)
+    if is_string(Node) then
+      return 'String'
+    end
+
+    if is_table(Node) then
+      return 'Container'
+    end
+
+    error('WTF')
+  end
+
+--[[
+  Determine node role.
+
+  If node has more than one entries, we assume it is sequence of
+  key-value elements. So length of table must be even and >= 2.
+
+  (I've not thought about empty tables yet.)
+
+  I can not reduce world to keys and values. Root table. Or wrapped
+  lists. They are neither keys nor values (formatting logic is
+  different for them). So "Object" for case when table has only one
+  entry.
+
+  Interface
+
+    (Index: int): string (= Object, Key, Value)
+]]
+local GetNodeRole =
+  function(Index, NumElements)
+    assert_integer(Index)
+
+    if (NumElements == 1) then
+      return 'Object'
+    end
+
+    if (Index % 2 == 1) then
+      return 'Key'
+    else
+      return 'Value'
+    end
+  end
+
 --[[
   Serialize tree node dispatcher
 
@@ -26,8 +78,7 @@ local Indenter = request('DelimitersWriter.Interface')
 
     Node: string or table
 
-    NodeType: str: (Element, Key, Value)
-
+    NodeRole: str: (= Object, Key, Value)
 
   Output
 
@@ -35,75 +86,36 @@ local Indenter = request('DelimitersWriter.Interface')
 ]]
 local Serialize
 Serialize =
-  function(Node, NodeType)
-    if is_string(Node) then
-      if (NodeType == 'Element') then
-        Indenter:Element_WriteString_Before()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_WriteString_Before()
-      else
-        Indenter:Value_WriteString_Before()
-      end
+  function(Node, NodeRole)
+    local NodeType = GetElementType(Node)
 
+    local Before = 'Before'
+    local After = 'After'
+
+    if (NodeType == 'String') then
+      local Event = 'Write'
+
+      Indenter:EventNotification(Before, Event, NodeType, NodeRole)
       DataWriter:WriteData(Node)
+      Indenter:EventNotification(After, Event, NodeType, NodeRole)
 
-      if (NodeType == 'Element') then
-        Indenter:Element_WriteString_After()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_WriteString_After()
-      else
-        Indenter:Value_WriteString_After()
-      end
+    elseif (NodeType == 'Container') then
+      local Event = 'StartList'
 
-    elseif is_table(Node) then
-      if (NodeType == 'Element') then
-        Indenter:Element_StartList_Before()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_StartList_Before()
-      else
-        Indenter:Value_StartList_Before()
-      end
-
+      Indenter:EventNotification(Before, Event, NodeType, NodeRole)
       DataWriter:StartList()
-
-      if (NodeType == 'Element') then
-        Indenter:Element_StartList_After()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_StartList_After()
-      else
-        Indenter:Value_StartList_After()
-      end
+      Indenter:EventNotification(After, Event, NodeType, NodeRole)
 
       for Index, Entity in ipairs(Node) do
-        local EntityType
-        if (#Node == 1) then
-          EntityType = 'Element'
-        elseif (Index % 2 == 1) then
-          EntityType = 'Key'
-        else
-          EntityType = 'Value'
-        end
-
-        Serialize(Entity, EntityType)
+        local EntityRole = GetNodeRole(Index, #Node)
+        Serialize(Entity, EntityRole)
       end
 
-      if (NodeType == 'Element') then
-        Indenter:Element_EndList_Before()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_EndList_Before()
-      else
-        Indenter:Value_EndList_Before()
-      end
+      local Event = 'EndList'
 
+      Indenter:EventNotification(Before, Event, NodeType, NodeRole)
       DataWriter:EndList()
-
-      if (NodeType == 'Element') then
-        Indenter:Element_EndList_After()
-      elseif (NodeType == 'Key') then
-        Indenter:Key_EndList_After()
-      else
-        Indenter:Value_EndList_After()
-      end
+      Indenter:EventNotification(After, Event, NodeType, NodeRole)
     end
   end
 
@@ -126,7 +138,7 @@ local SerializeWrapper =
     DataWriter.Output = Writer
     Indenter.Output = Writer
 
-    Serialize(Tree, 'Element')
+    Serialize(Tree, GetNodeRole(1, 1))
   end
 
 -- Exports:

@@ -10,47 +10,19 @@
 
       Output implementer.
 
-    Key_StartList_Before
-    Key_StartList_After
-    Value_StartList_Before
-    Value_StartList_After
+    EventNotification
+      (
+        When: str (= Before, After)
+        EventName: str (= StartList, EndList, Write),
+        NodeType: str (= String, Container),
+        NodeRole: str (= Object, Key, Value)
+      )
 
-    Key_EndList_Before
-    Key_EndList_After
-    Value_EndList_Before
-    Value_EndList_After
-      (self, Node: table/str)
+      Generic event handler.
 
-      Event handlers for opening/closing list.
-
-    Key_WriteString_Before
-    Key_WriteString_After
-    Value_WriteString_Before
-    Value_WriteString_After
-      (self, Node: table/str)
-
-      Event handlers for writing element.
-
-    /*
-      I would prefer to design "before" and "after" families as
-      subtables, but then you explicitly to manually pass "self"
-      and call event handler like
-      "DelimWriter.StartList.Before(DelimWriter, ...)", versus
-      "DelimWriter:StartList_Before(...)".
-    */
-
-    /*
-      That awfully long list of handlers!
-
-      Well, my use case is representing Lua tables which are sequenced
-      as "key (value)" pairs. I want "<indent>key (<newline>" for the
-      key part. Both "key" and "value" can be strings or lists. So
-      what is "key" is determined by element position in parent list.
-
-      I can cut those 12 handlers to 6 by passing position, but
-      I prefer this way. Extensive dumbness is more manageable than
-      compacted trickery.
-    */
+      I've tried approach with like 18 standalone even handlers.
+      It's unmaintainable. I've tried approach with passing indexes
+      and list length. It's uncomprehensible.
 ]]
 
 -- Internal: indentation tracker
@@ -65,130 +37,73 @@ return
     -- Internal: indentation tracker
     Indent = Indent,
 
-    -- Writing node events:
-    Element_WriteString_Before =
-      function(self, Node)
-        -- self:Emit('[Element_WriteString_Before]')
-      end,
+    -- Adding indentation before or after writing something:
+    EventNotification =
+      function(self, When, EventName, NodeType, NodeRole)
+        print(When, EventName, NodeType, NodeRole)
 
-    Element_WriteString_After =
-      function(self, Node)
-        -- self:Emit('[Element_WriteString_After]')
-        -- self:EmitIndent()
-      end,
+        --( Contents are indented
+        if
+          (When == 'After') and
+          (EventName == 'StartList')
+        then
+          -- self:Emit('[+Indent]')
+          self.Indent:Increase()
+        end
 
-    Key_WriteString_Before =
-      function(self, Node)
-        -- self:Emit('[Key_WriteString_Before]')
-        self:EmitNewline()
-        self:EmitIndent()
-      end,
+        if
+          (When == 'Before') and
+          (EventName == 'EndList')
+        then
+          -- self:Emit('[-Indent]')
+          self.Indent:Decrease()
+        end
+        --)
 
-    Key_WriteString_After =
-      function(self, Node)
-        -- self:Emit('[Key_WriteString_After]')
-        self:Emit(' ')
-      end,
+        --( Key is on indented newline
+        if
+          (When == 'Before') and
+          (
+            (EventName == 'StartList') or
+            (EventName == 'Write')
+          ) and
+          (NodeRole == 'Key')
+        then
+          -- self:Emit('[key-line]')
+          self.IsOnEmptyLine = false
+          self:EmitNewline()
+          self:EmitIndent()
+        end
+        --)
 
-    Value_WriteString_Before =
-      function(self, Node)
-        -- self:Emit('[]')
-        self:EmitIndent()
-      end,
+        -- Space between key and value
+        if
+          (When == 'After') and
+          (
+            (EventName == 'EndList') or
+            (EventName == 'Write')
+          ) and
+          (NodeRole == 'Key')
+        then
+          self:Emit(' ')
+        end
 
-    Value_WriteString_After =
-      function(self)
-        -- self:Emit('[Value_WriteString_After]')
-      end,
-
-    -- Opening list sequence events:
-    Element_StartList_Before =
-      function(self, Node)
-        -- self:Emit('[Element_StartList_Before]')
-        self:EmitNewline()
-        self:EmitIndent()
-      end,
-
-    Key_StartList_Before =
-      function(self, Node)
-        -- self:Emit('[Key_StartList_Before]')
-        self:EmitNewline()
-        self:EmitIndent()
-      end,
-
-    Value_StartList_Before =
-      function(self, Node)
-        -- self:Emit('[Value_StartList_Before]')
-      end,
-
-    Element_StartList_After =
-      function(self, Node)
-        -- self:Emit('[Element_StartList_After]')
-        -- self:EmitNewline()
-        self.Indent:Increase()
-      end,
-
-    Key_StartList_After =
-      function(self, Node)
-        -- self:Emit('[Key_StartList_After]')
-        -- self:EmitNewline()
-        self.Indent:Increase()
-      end,
-
-    Value_StartList_After =
-      function(self, Node)
-        -- self:Emit('[Value_StartList_After]')
-        -- self:EmitNewline()
-        self.Indent:Increase()
-      end,
-
-    -- Closing list sequence events:
-    Element_EndList_Before =
-      function(self, Node)
-        -- self:Emit('[Element_EndList_Before]')
-
-        self.Indent:Decrease()
-
-        self:EmitNewline()
-        self:EmitIndent()
-      end,
-
-    Element_EndList_After =
-      function(self, Node)
-        -- self:Emit('[Element_EndList_After]')
-
-        self:EmitNewline()
-      end,
-
-    Key_EndList_Before =
-      function(self, Node)
-        -- self:Emit('[Key_EndList_Before]')
-
-        self.Indent:Decrease()
-        self:EmitIndent()
-      end,
-
-    Value_EndList_Before =
-      function(self, Node)
-        -- self:Emit('[Value_EndList_Before]')
-
-        self.Indent:Decrease()
-
-        self:EmitNewline()
-
-        -- self:EmitIndent()
-      end,
-
-    Value_EndList_After =
-      function(self, Node)
-        -- self:Emit('[Value_EndList_After]')
-        self:EmitNewline()
-      end,
-
-    Key_EndList_After =
-      function(self, Node)
-        -- self:Emit('[Key_EndList_After]')
-        self:Emit(' ')
+        --( Container objects are multilined
+        if
+          (When == 'Before') and
+          (
+            (EventName == 'StartList') or
+            (EventName == 'EndList')
+          ) and
+          (NodeType == 'Container') and
+          (NodeRole == 'Object')
+        then
+          -- self:Emit('[multiline-object]')
+          self.IsOnEmptyLine = false
+          self:EmitNewline()
+          self:EmitIndent()
+        end
+        --)
       end,
 
     --[[
