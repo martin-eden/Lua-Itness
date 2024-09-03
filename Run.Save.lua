@@ -16,7 +16,7 @@ local TableToString = request('!.concepts.lua_table_code.save')
 
 local Sequence = Sequencer.TableToSeq(Data)
 
--- print(TableToString(Sequence))
+print(TableToString(Sequence))
 
 local Writer =
   request(
