@@ -1,13 +1,8 @@
+
 (
-  a (A[Value_EndList_Before]
-)  b (B[Value_EndList_Before]
-)  c (
+  c (
     (
-      d (D[Value_EndList_Before]
-)      e (E[Value_EndList_Before]
-)      (
-        _f (_F[Value_EndList_Before]
-)      ) (F[Value_EndList_Before]
-)    )[Element_EndList_After]
-[Value_EndList_Before]
-))[Element_EndList_After]
+      (
+        _f (_F)) (F)
+    ))
+)
