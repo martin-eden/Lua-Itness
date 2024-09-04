@@ -4,7 +4,7 @@
   Serialize tree leaf
 
   Tree leaf is a string. So we are worrying only about quoting syntax
-  characters. Also we doing some pretty-printing by inserting spaces.
+  characters.
 
   Problem reminder
 
@@ -48,8 +48,8 @@ local WriteLeaf =
 
     local EncodedData = ''
 
-    -- State: quoting state = (Unquoted, Quoted)
     do
+      -- State: quoting state = (Unquoted, Quoted)
       local QuoteState = 'Unquoted'
 
       -- Encode character
