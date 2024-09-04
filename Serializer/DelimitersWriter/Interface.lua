@@ -20,8 +20,8 @@
 
       Generic event handler.
 
-      I've tried approach with like 18 standalone even handlers.
-      It's unmaintainable. I've tried approach with passing indexes
+      I've tried approach with like 18 standalone event handlers.
+      It's unmaintainable. I've tried approach with passing indices
       and list length. It's uncomprehensible.
 ]]
 
@@ -37,12 +37,16 @@ return
     -- Internal: indentation tracker
     Indent = Indent,
 
+    -- Internal: previous state
+    PrevState =
+      { When = nil, EventName = nil, NodeType = nil, NodeRole = nil },
+
     -- Adding indentation before or after writing something:
     EventNotification =
       function(self, When, EventName, NodeType, NodeRole)
-        print(When, EventName, NodeType, NodeRole)
+        -- print(When, EventName, NodeType, NodeRole)
 
-        --( Contents are indented
+        --( List contents have additional indent
         if
           (When == 'After') and
           (EventName == 'StartList')
@@ -70,9 +74,7 @@ return
           (NodeRole == 'Key')
         then
           -- self:Emit('[key-line]')
-          self.IsOnEmptyLine = false
-          self:EmitNewline()
-          self:EmitIndent()
+          self:EmitNewlineIndent()
         end
         --)
 
@@ -88,7 +90,7 @@ return
           self:Emit(' ')
         end
 
-        --( Container objects are multilined
+        -- Container objects are multilined
         if
           (When == 'Before') and
           (
@@ -99,11 +101,55 @@ return
           (NodeRole == 'Object')
         then
           -- self:Emit('[multiline-object]')
-          self.IsOnEmptyLine = false
-          self:EmitNewline()
-          self:EmitIndent()
+          self:EmitNewlineIndent()
         end
-        --)
+
+        -- List key closing parenthesis on newline
+        if
+          (When == 'Before') and
+          (EventName == 'EndList') and
+          (NodeType == 'Container') and
+          (NodeRole == 'Key')
+        then
+          -- self:Emit('[]')
+          self:EmitNewlineIndent()
+        end
+
+        --[[
+          Value's closing parenthesis is on indented newline
+          when value is serialized in several lines.
+
+          I can not track exactly this condition but if previous
+          node role was "object" and now it is "value" it means
+          we are writing next ")" in wrapped list.
+        ]]
+        if
+          (When == 'Before') and
+          (EventName == 'EndList') and
+          (NodeType == 'Container') and
+          (NodeRole == 'Value') and
+          (
+            (self.PrevState.EventName == 'EndList') and
+            (self.PrevState.NodeRole == 'Object')
+          )
+        then
+          -- self:Emit('[]')
+          self:EmitNewlineIndent()
+        end
+
+        -- Maintenance: we are not on newline at "after" event
+        if (When == 'After') then
+          self.IsOnEmptyLine = false
+        end
+
+        -- Maintenance: store current arguments for the next call
+        do
+          -- No table constructor syntax as we don't want new table alloc.
+          self.PrevState.When = When
+          self.PrevState.EventName = EventName
+          self.PrevState.NodeType = NodeType
+          self.PrevState.NodeRole = NodeRole
+        end
       end,
 
     --[[
@@ -115,7 +161,7 @@ return
     -- Empty line flag
     IsOnEmptyLine = true,
 
-    -- Write string (hopefully without newlines)
+    -- Write string (hopefully without trailing newline)
     Emit =
       function(self, s)
         self.Output:Write(s)
@@ -137,6 +183,13 @@ return
       function(self)
         self:Emit(self.Indent:GetString())
       end,
+
+    -- Shortcut for emitting newline and indent
+    EmitNewlineIndent =
+      function(self)
+        self:EmitNewline()
+        self:EmitIndent()
+      end
   }
 
 --[[

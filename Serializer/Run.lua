@@ -30,13 +30,9 @@ local GetElementType =
   function(Node)
     if is_string(Node) then
       return 'String'
-    end
-
-    if is_table(Node) then
+    elseif is_table(Node) then
       return 'Container'
     end
-
-    error('WTF')
   end
 
 --[[
@@ -45,12 +41,11 @@ local GetElementType =
   If node has more than one entries, we assume it is sequence of
   key-value elements. So length of table must be even and >= 2.
 
-  (I've not thought about empty tables yet.)
+  (Empty tables are not produced by sequencer and ignored.)
 
   I can not reduce world to keys and values. Root table. Or wrapped
-  lists. They are neither keys nor values (formatting logic is
-  different for them). So "Object" for case when table has only one
-  entry.
+  lists. They are neither keys nor values (because they have their pair).
+  So "Object" for case when table has only one entry.
 
   Interface
 
@@ -139,6 +134,8 @@ local SerializeWrapper =
     Indenter.Output = Writer
 
     Serialize(Tree, GetNodeRole(1, 1))
+
+    Writer:Write('\n')
   end
 
 -- Exports:
