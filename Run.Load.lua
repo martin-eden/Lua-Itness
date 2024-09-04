@@ -3,14 +3,11 @@
 package.path = package.path .. ';../../?.lua'
 require('workshop.base')
 
-local SerializeTable =
-  request(
-    -- '!.table.as_string'
-    '!.concepts.lua_table_code.save'
-  )
+local SerializeTable = request('!.concepts.lua_table_code.save')
 
 local Reader = request('!.concepts.StreamIo.Input.File')
 local Writer = request('!.concepts.StreamIo.Output.File')
+
 local Parse = request('Load')
 local Sequencer = request('Sequencer.Interface')
 
@@ -32,7 +29,7 @@ end
 local Sequence = Parse(Reader)
 
 if not is_table(Sequence) then
-  print('Parse error.')
+  print('[Error] Parse error.')
   return
 end
 
@@ -40,9 +37,18 @@ end
 
 local Table = Sequencer.SeqToTable(Sequence)
 
+if not is_table(Table) then
+  print(
+    '[Error] This strings tree cannot be converted to Lua table.\n' ..
+    "  (Key's value must be a list with one element.)"
+  )
+  return
+end
+
 Writer:Write(SerializeTable(Table))
 
 --[[
   2024-08-04
   2024-08-09
+  2024-09-04
 ]]

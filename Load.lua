@@ -50,6 +50,12 @@ Parse =
         return Result
       elseif (Char == '[') and (QuoteState == 'Unquoted') then
         QuoteState = 'Quoted'
+        --[[
+          We want "term" stop being nil when we encountered quote.
+
+          That's for empty string which is encoded as [].
+        ]]
+        Term = Term or ''
       elseif (Char == ']') and (QuoteState == 'Quoted') then
         QuoteState = 'Unquoted'
       elseif ((Char == ' ') or (Char == '\n')) and (QuoteState == 'Unquoted') then

@@ -130,7 +130,7 @@ TableToSeq =
         end
 
         table.insert(Result, StringKey)
-        table.insert(Result, { StringValue } )
+        table.insert(Result, { StringValue })
 
         ::Next::
       end
