@@ -28,6 +28,8 @@ end
 
 local Sequence = Parse(Reader)
 
+Reader:CloseFile()
+
 if not is_table(Sequence) then
   print('[Error] Parse error.')
   return
@@ -46,6 +48,8 @@ if not is_table(Table) then
 end
 
 Writer:Write(SerializeTable(Table))
+
+Writer:CloseFile()
 
 --[[
   2024-08-04
