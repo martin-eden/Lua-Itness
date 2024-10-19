@@ -48,6 +48,9 @@ Special characters quoting:
 -- Martin, 2024-08/2024-09
 ```
 
+Comes with Lua-Itness back-and-forth converter with pretty printing
+both for Lua and Itness data.
+
 
 ## Requirements
 
