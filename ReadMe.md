@@ -59,24 +59,22 @@ both for Lua and Itness data.
 
 ## Basic usage
 
-* Convert [Data.lua](Data.lua) to [Data.is](Data.is):
+* Convert [`Data.lua`](Data.lua) to [`Data.is`](Data.is):
 
   ```$ lua RunSave.lua```
 
-* Convert [Data.is](Data.is) to [Data.lua](Data.lua):
+* Convert `Data.is` to `Data.lua`:
 
   ```$ lua RunLoad.lua```
 
 
-## Interesting design things
+## Interesting design features
 
 * [Abstracted output](workshop/concepts/StreamIo/Output.lua)
 * [Formatting](Serializer/) is separated from data serialization
-* * Formatting via [event handler](Serializer/DelimitersWriter/Interface.lua)
+  * Formatting via [event handler](Serializer/DelimitersWriter/Interface.lua)
 
 
 ## See also
 
   * [My other repositories](https://github.com/martin-eden/contents)
-
-
