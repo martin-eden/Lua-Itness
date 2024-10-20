@@ -91,7 +91,7 @@ Serialize =
       local Event = 'Write'
 
       Indenter:EventNotification(Before, Event, NodeType, NodeRole)
-      DataWriter:WriteData(Node)
+      DataWriter:WriteLeaf(Node)
       Indenter:EventNotification(After, Event, NodeType, NodeRole)
 
     elseif (NodeType == 'Container') then

@@ -6,40 +6,76 @@
 
   Interface
 
-    Output: [StreamIo.Output]
+    .Output: [StreamIo.Output]
 
       Output implementer.
 
-    StartList(self)
+    :StartList()
 
       Emit sequence opening.
 
-    EndList(self)
+    :EndList()
 
       Emit sequence closure.
 
-    WriteData(self, Data: str)
+    :WriteData(Data: str)
 
       Encode string value.
 ]]
 
-return
+-- Last mod.: 2024-10-20
+
+local ToList = request('!.table.to_list')
+local MapValues = request('!.table.map_values')
+local ListToString = request('!.concepts.List.ToString')
+local QuoteRegexp = request('!.lua.regexp.quote')
+
+local Exports =
   {
     -- Generic output. Caller should set it to concrete implementer.
     Output = request('!.concepts.StreamIo.Output'),
 
     -- Emit opening sequence character
-    StartList =
-      function(self)
-        self.Output:Write('(')
-      end,
+    StartList = request('StartList'),
 
     -- Emit closing sequence character
-    EndList =
-      function(self)
-        self.Output:Write(')')
-      end,
+    EndList = request('EndList'),
 
     -- Serialize string
-    WriteData = request('WriteData'),
+    WriteLeaf = request('WriteLeaf'),
+
+    -- [Internal] Syntax characters categorization
+    SyntaxChars =
+      {
+        QuoteOpening = '[',
+        QuoteClosing = ']',
+        ListOpening = '(',
+        ListClosing = ')',
+        Delimiters = { ' ', '\n' },
+      },
+
+    -- [Internal] Map of syntax characters. Defined later here
+    IsSyntaxChar = {},
+    -- [Internal] Syntax chars regexp. Defined later here
+    SyntaxCharsRegexp = '',
   }
+
+local SyntaxCharsList = ToList(Exports.SyntaxChars)
+
+-- "IsSyntaxChar[' '] = true"
+Exports.IsSyntaxChar = MapValues(SyntaxCharsList)
+
+-- Regexp describing any of our syntax characters
+-- Lua blows on "[]", so contents should not be empty.
+Exports.SyntaxCharsRegexp =
+  '[' ..
+  QuoteRegexp(ListToString(SyntaxCharsList)) ..
+  ']'
+
+-- Exports:
+return Exports
+
+--[[
+  2024-09-03
+  2024-10-20
+]]
