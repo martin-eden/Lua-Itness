@@ -75,7 +75,7 @@ local WriteLeaf =
           end
 
           if
-            (InQuotes == true) and
+            InQuotes and
             (Char == ClosingQuote)
           then
             Result = ClosingQuote .. Char
