@@ -1,4 +1,6 @@
--- Parser test rig
+-- Itness to Lua
+
+-- Last mod.: 2024-10-20
 
 package.path = package.path .. ';../../?.lua'
 require('workshop.base')
