@@ -6,6 +6,8 @@
     (func) - parse function
 ]]
 
+-- Last mod.: 2024-10-20
+
 local AssertIs = request('!.concepts.Class.AssertIs')
 local Reader = request('!.concepts.StreamIo.Input')
 
@@ -25,7 +27,7 @@ Parse =
 
     local Term = nil
 
-    local CloseTerm =
+    local FinalizeTerm =
       function()
         if (Term ~= nil) then
           table.insert(Result, Term)
@@ -33,7 +35,7 @@ Parse =
         Term = nil
       end
 
-    local QuoteState = 'Unquoted'
+    local InQuotes = false
 
     while true do
       local Char, IsOk = Input:Read(1)
@@ -42,62 +44,40 @@ Parse =
         break
       end
 
-      if (Char == '(') and (QuoteState == 'Unquoted') then
-        CloseTerm()
+      if (Char == '(') and not InQuotes then
+        FinalizeTerm()
         table.insert(Result, Parse(Input))
-      elseif (Char == ')') and (QuoteState == 'Unquoted') then
-        CloseTerm()
+      elseif (Char == ')') and not InQuotes then
+        FinalizeTerm()
         return Result
-      elseif (Char == '[') and (QuoteState == 'Unquoted') then
-        QuoteState = 'Quoted'
+      elseif (Char == '[') and not InQuotes then
+        InQuotes = true
         --[[
           We want "term" stop being nil when we encountered quote.
 
           That's for empty string which is encoded as [].
         ]]
         Term = Term or ''
-      elseif (Char == ']') and (QuoteState == 'Quoted') then
-        QuoteState = 'Unquoted'
-      elseif ((Char == ' ') or (Char == '\n')) and (QuoteState == 'Unquoted') then
-        CloseTerm()
+      elseif (Char == ']') and InQuotes then
+        InQuotes = false
+      elseif ((Char == ' ') or (Char == '\n')) and not InQuotes then
+        FinalizeTerm()
       else
         Term = (Term or '') .. Char
       end
     end
 
-    CloseTerm()
+    FinalizeTerm()
 
     return Result
   end
 
---[[
-  Remove one folding level from result
-
-  Input:
-    [Reader]
-
-  Output:
-    table or nil
-
-  Because parser happily parses "a b" to {'a', 'b'}.
-  But we are expecting input within parenthesis: "(a b)".
-  Which is parsed as { {'a', 'b'} }.
-
-  In case when input is not in parenthesis, we return nil.
-]]
+-- Just check that input supports reader's interface and call core
 local ParseWrapper =
   function(Input)
     AssertIs(Input, Reader)
 
-    local Result = nil
-
-    local ParseResult = Parse(Input)
-
-    if (#ParseResult == 1) and is_table(ParseResult[1]) then
-      Result = ParseResult[1]
-    end
-
-    return Result
+    return Parse(Input)
   end
 
 -- Export:
@@ -106,4 +86,5 @@ return ParseWrapper
 --[[
   2024-07-19
   2024-08-04
+  2024-10-20
 ]]

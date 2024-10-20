@@ -133,7 +133,9 @@ local SerializeWrapper =
     DataWriter.Output = Writer
     Indenter.Output = Writer
 
-    Serialize(Tree, GetNodeRole(1, 1))
+    for Key, Value in ipairs(Tree) do
+      Serialize(Value, 'Object')
+    end
 
     Writer:Write('\n')
   end
