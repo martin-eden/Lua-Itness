@@ -1,4 +1,4 @@
--- Itness to Lua
+-- Itness to Lua table
 
 -- Last mod.: 2024-10-20
 
@@ -10,12 +10,12 @@ local SerializeTable = request('!.concepts.lua_table_code.save')
 local Reader = request('!.concepts.StreamIo.Input.File')
 local Writer = request('!.concepts.StreamIo.Output.File')
 
-local Parse = request('Load')
+local Parse = request('Itness.Parse')
 local Sequencer = request('Sequencer.Interface')
 
 -- Prepare input
 do
-  local FileName = 'Data.is'
+  local FileName = 'It.is'
   Reader:OpenFile(FileName)
 
   print(string.format('Reading data from "%s".', FileName))
@@ -23,7 +23,7 @@ end
 
 -- Prepare output
 do
-  local FileName = 'Data.lua'
+  local FileName = 'It.is.Table.lua'
   Writer:OpenFile(FileName)
   print(string.format('Writing data to "%s".', FileName))
 end
@@ -57,4 +57,5 @@ Writer:CloseFile()
   2024-08-04
   2024-08-09
   2024-09-04
+  2024-10-20
 ]]
