@@ -30,7 +30,7 @@ return
     Output = Output,
 
     -- [Main] Add indentation before or after writing something
-    EventNotification = request('OnEvent'),
+    OnEvent = request('OnEvent'),
 
     -- [Internal] Categorized syntax elements
     Syntax = Syntax,
@@ -38,9 +38,8 @@ return
     -- [Internal] Indentation tracker
     Indent = Indenter,
 
-    -- [Internal] Previous state
-    PrevState =
-      { When = nil, EventName = nil, NodeType = nil, NodeRole = nil },
+    -- [Internal] Previous item type. Used by OnEvent()
+    PrevItem = 'Nothing',
 
     --[[
       Side functionality: not-empty-liner
