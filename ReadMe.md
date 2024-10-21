@@ -70,7 +70,7 @@ both for Lua and Itness data.
 
 ## Interesting design features
 
-* [Syntax specification](Iteness/Syntax.lua) for programmatic users
+* [Syntax specification](Itness/Syntax.lua) for programmatic users
 * [Abstracted input and output](workshop/concepts/StreamIo/)
 * [Formatting](Itness/Serializer/) is separated from data serialization
   * Formatting via [events handler](Itness/Serializer/DelimitersWriter/OnEvent.lua)
