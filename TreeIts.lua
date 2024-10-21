@@ -5,8 +5,8 @@
 package.path = package.path .. ';../../?.lua'
 require('workshop.base')
 
-local InputFileName = 'It.is.Sequence.lua'
-local OutputFileName = 'Sequence.is'
+local InputFileName = 'Tree.lua'
+local OutputFileName = 'Tree.is'
 
 -- ( Imports
 local FileAsString = request('!.file_system.file.as_string')

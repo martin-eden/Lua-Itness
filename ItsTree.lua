@@ -7,7 +7,7 @@ require('workshop.base')
 
 -- [Config]
 local InputFileName = 'It.is'
-local OutputFileName = 'It.is.Sequence.lua'
+local OutputFileName = 'Tree.lua'
 
 -- Imports:
 local SerializeTable = request('!.concepts.lua_table_code.save')

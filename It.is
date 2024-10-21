@@ -1,3 +1,1 @@
-Reserve ( Addr 00929 Size 00180 )
-Reserve ( Addr 01728 ( something ) Size 00001 )
-Reserve ( Addr 01109 Size 00013 )
+( a ( b ) ( c ( d ) ) )
