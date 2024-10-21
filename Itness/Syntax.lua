@@ -1,4 +1,4 @@
--- Itness format syntax characters. Categorized
+-- Categorized Itness format syntax characters
 
 return
   {
