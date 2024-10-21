@@ -1,13 +1,15 @@
 -- String trees serializer interface
 
---[[
-  I just want one function, but that function is growing big.
-  So it should be in directory.
-]]
+-- Imports:
+local Output = request('!.concepts.StreamIo.Output')
 
+-- Exports:
 return
   {
-    -- Serialize strings tree to output
+    -- [Config] Output implementer. Set to more concrete specie!
+    Output = Output,
+
+    -- [Main] Serialize strings tree to output
     Run = request('Run'),
   }
 

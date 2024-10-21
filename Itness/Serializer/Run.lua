@@ -1,8 +1,6 @@
 -- Itness format serialization
 
 -- Imports:
-local AssertIs = request('!.concepts.Class.AssertIs')
-local Output = request('!.concepts.StreamIo.Output')
 local DataWriter = request('DataWriter.Interface')
 local Indenter = request('DelimitersWriter.Interface')
 
@@ -30,20 +28,17 @@ Serialize =
   end
 
 --[[
-  Serialize wrapper with pre-flight checks
+  Serialize wrapper
 
   Input
     Node (table)
-    Output [Writer]
 ]]
 local SerializeWrapper =
-  function(Tree, Writer)
+  function(self, Tree)
     assert_table(Tree)
 
-    AssertIs(Writer, Output)
-
-    DataWriter.Output = Writer
-    Indenter.Output = Writer
+    DataWriter.Output = self.Output
+    Indenter.Output = self.Output
 
     for Key, Value in ipairs(Tree) do
       Serialize(Value)
