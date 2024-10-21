@@ -1,19 +1,19 @@
 -- Itness to Lua
 
--- Last mod.: 2024-10-20
+-- Last mod.: 2024-10-21
 
 package.path = package.path .. ';../../?.lua'
 require('workshop.base')
 
-local SerializeTable = request('!.concepts.lua_table_code.save')
-
-local Reader = request('!.concepts.StreamIo.Input.File')
-local Writer = request('!.concepts.StreamIo.Output.File')
-
-local Parse = request('Itness.Parse')
-
+-- [Config]
 local InputFileName = 'It.is'
 local OutputFileName = 'It.is.Sequence.lua'
+
+-- Imports:
+local SerializeTable = request('!.concepts.lua_table_code.save')
+local Reader = request('!.concepts.StreamIo.Input.File')
+local Writer = request('!.concepts.StreamIo.Output.File')
+local Parser = request('Itness.Parser.Interface')
 
 -- Prepare input
 do
@@ -28,7 +28,8 @@ do
   print(string.format('Writing data to "%s".', OutputFileName))
 end
 
-local Sequence = Parse(Reader)
+Parser.Input = Reader
+local Sequence = Parser:Run()
 
 Reader:CloseFile()
 
@@ -46,4 +47,5 @@ Writer:CloseFile()
   2024-08-09
   2024-09-04
   2024-10-20
+  2024-10-21
 ]]
