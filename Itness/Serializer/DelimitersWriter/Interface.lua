@@ -11,146 +11,36 @@
       Output implementer.
 
     EventNotification
-      (
-        When: str (= Before, After)
-        EventName: str (= StartList, EndList, Write),
-        NodeType: str (= String, Container),
-        NodeRole: str (= Object, Key, Value)
-      )
 
-      Generic event handler.
-
-      I've tried approach with like 18 standalone event handlers.
-      It's unmaintainable. I've tried approach with passing indices
-      and list length. It's uncomprehensible.
+      Generic event handler. See arguments format inside.
 ]]
 
--- Internal: indentation tracker
-local Indent = request('!.concepts.Indent.Interface')
-Indent:Init(0, '  ')
+-- Imports:
+local Output = request('!.concepts.StreamIo.Output')
+local Syntax = request('^.^.Syntax')
+local Indenter = request('!.concepts.Indent.Interface')
 
+-- We're setting indent chunk on module load
+Indenter:Init(0, string.rep(Syntax.Delimiters.Space, 2))
+
+-- Exports:
 return
   {
-    -- Output implementer. Set to concrete for practical use
-    Output = request('!.concepts.StreamIo.Output'),
+    -- [Config] Output implementer. Set to concrete for practical use
+    Output = Output,
 
-    -- Internal: indentation tracker
-    Indent = Indent,
+    -- [Main] Add indentation before or after writing something
+    EventNotification = request('OnEvent'),
 
-    -- Internal: previous state
+    -- [Internal] Categorized syntax elements
+    Syntax = Syntax,
+
+    -- [Internal] Indentation tracker
+    Indent = Indenter,
+
+    -- [Internal] Previous state
     PrevState =
       { When = nil, EventName = nil, NodeType = nil, NodeRole = nil },
-
-    -- Adding indentation before or after writing something:
-    EventNotification =
-      function(self, When, EventName, NodeType, NodeRole)
-        -- print(When, EventName, NodeType, NodeRole)
-
-        --( List contents have additional indent
-        if
-          (When == 'After') and
-          (EventName == 'StartList')
-        then
-          -- self:Emit('[+Indent]')
-          self.Indent:Increase()
-        end
-
-        if
-          (When == 'Before') and
-          (EventName == 'EndList')
-        then
-          -- self:Emit('[-Indent]')
-          self.Indent:Decrease()
-        end
-        --)
-
-        --( Key is on indented newline
-        if
-          (When == 'Before') and
-          (
-            (EventName == 'StartList') or
-            (EventName == 'Write')
-          ) and
-          (NodeRole == 'Key')
-        then
-          -- self:Emit('[key-line]')
-          self:EmitNewlineIndent()
-        end
-        --)
-
-        -- Space between key and value
-        if
-          (When == 'After') and
-          (
-            (EventName == 'EndList') or
-            (EventName == 'Write')
-          ) and
-          (NodeRole == 'Key')
-        then
-          self:Emit(' ')
-        end
-
-        -- Container objects are multilined
-        if
-          (When == 'Before') and
-          (
-            (EventName == 'StartList') or
-            (EventName == 'EndList')
-          ) and
-          (NodeType == 'Container') and
-          (NodeRole == 'Object')
-        then
-          -- self:Emit('[multiline-object]')
-          self:EmitNewlineIndent()
-        end
-
-        -- List key closing parenthesis on newline
-        if
-          (When == 'Before') and
-          (EventName == 'EndList') and
-          (NodeType == 'Container') and
-          (NodeRole == 'Key')
-        then
-          -- self:Emit('[]')
-          self:EmitNewlineIndent()
-        end
-
-        --[[
-          Value's closing parenthesis is on indented newline
-          when value is serialized in several lines.
-
-          I can not track exactly this condition but if previous
-          node role was "object" and now it is "value" it means
-          we are writing next ")" in wrapped list.
-        ]]
-        if
-          (When == 'Before') and
-          (EventName == 'EndList') and
-          (NodeType == 'Container') and
-          (NodeRole == 'Value') and
-          (
-            (self.PrevState.EventName == 'EndList') and
-            (self.PrevState.NodeRole == 'Object')
-          )
-        then
-          -- self:Emit('[]')
-          self:EmitNewlineIndent()
-        end
-
-        -- Maintenance: we are not on newline at "after" event
-        if (When == 'After') then
-          self.IsOnEmptyLine = false
-        end
-
-        -- Maintenance: store current arguments for the next call
-        do
-          -- No table constructor syntax as we don't want new table alloc.
-          self.PrevState.When = When
-          self.PrevState.EventName = EventName
-          self.PrevState.NodeType = NodeType
-          self.PrevState.NodeRole = NodeRole
-        end
-      end,
 
     --[[
       Side functionality: not-empty-liner
@@ -158,40 +48,23 @@ return
       I don't want empty lines in generated text. So no '\n\n'.
       But newline logic is scattered among event handlers.
     ]]
-    -- Empty line flag
+    -- [Internal] Empty line flag
     IsOnEmptyLine = true,
 
-    -- Write string (hopefully without trailing newline)
-    Emit =
-      function(self, s)
-        self.Output:Write(s)
-        self.IsOnEmptyLine = false
-      end,
+    -- [Internal] Write string
+    Emit = request('Emit'),
 
-    -- Assure that next string will be written on new line
-    EmitNewline =
-      function(self)
-        if self.IsOnEmptyLine then
-          return
-        end
-        self:Emit('\n')
-        self.IsOnEmptyLine = true
-      end,
+    -- [Internal] Makes sure that next string will be written on new line
+    EmitNewline = request('EmitNewline'),
 
-    -- Just emit indent string as we have access to internals
-    EmitIndent =
-      function(self)
-        self:Emit(self.Indent:GetString())
-      end,
+    -- [Internal] Emit indent string
+    EmitIndent = request('EmitIndent'),
 
-    -- Shortcut for emitting newline and indent
-    EmitNewlineIndent =
-      function(self)
-        self:EmitNewline()
-        self:EmitIndent()
-      end
+    -- [Internal] Emit newline and indent
+    EmitNewlineIndent = request('EmitNewlineIndent'),
   }
 
 --[[
   2024-09-03
+  2024-10-21
 ]]
