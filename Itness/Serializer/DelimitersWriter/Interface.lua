@@ -1,19 +1,12 @@
--- Formatting functions
+-- Data separation/indentation
 
 --[[
-  This class works with indentation of data. It looks for structure,
-  not for data encoding.
+  We don't care about items encoding. It's [DataWriter]'s job.
 
-  Interface
-
-    Output: [StreamIo.Output]
-
-      Output implementer.
-
-    EventNotification
-
-      Generic event handler. See arguments format inside.
+  We do care about types of adjacent items.
 ]]
+
+-- Last mod.: 2024-10-21
 
 -- Imports:
 local Output = request('!.concepts.StreamIo.Output')
