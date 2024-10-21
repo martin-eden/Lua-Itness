@@ -41,7 +41,7 @@ local DecisionMatrix =
       },
     StartList =
       {
-        StartList = EmptyFunc,
+        StartList = NewlineIndentFunc,
         WriteString = NewlineIndentFunc,
         EndList = EmptyFunc,
         Nothing = EmptyFunc,
@@ -55,9 +55,9 @@ local DecisionMatrix =
       },
     EndList =
       {
-        StartList = EmptyFunc,
+        StartList = NewlineIndentFunc,
         WriteString = NewlineIndentFunc,
-        EndList = EmptyFunc,
+        EndList = NewlineIndentFunc,
         Nothing = NewlineIndentFunc,
       },
   }
