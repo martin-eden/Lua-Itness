@@ -45,14 +45,7 @@ local Exports =
     WriteLeaf = request('WriteLeaf'),
 
     -- [Internal] Syntax characters categorization
-    SyntaxChars =
-      {
-        QuoteOpening = '[',
-        QuoteClosing = ']',
-        ListOpening = '(',
-        ListClosing = ')',
-        Delimiters = { ' ', '\n' },
-      },
+    SyntaxChars = request('^.^.Syntax'),
 
     -- [Internal] Map of syntax characters. Defined later here
     IsSyntaxChar = {},
