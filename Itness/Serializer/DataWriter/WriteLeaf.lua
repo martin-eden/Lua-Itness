@@ -20,9 +20,9 @@
 
     What if value has "[" or "]"?
 
-    Quoting is one-level, first "[" starts quote mode, first "]" ends
-    quote mode. So value "[" serialized as "[[]" and "]" is serialized
-    as "]". And value " ]" is serialized as "[ ]]".
+    Quoting is one-level, first "[" starts quote, first "]" ends
+    quote. So "[" is serialized as "[[]" and "]" is serialized
+    as "]". And " ]" is serialized as "[ ]]".
 
   Implementation
 
@@ -31,9 +31,10 @@
     State is "Quoted" or "Unquoted".
 
     "Quoted" when we emitted opening quote "[". So in this state we are
-    worrying only about encountering closing quote "]" in data.
+    worrying only about encountering closing quote "]" in data. And
+    adding closing quote when data ends.
 
-    "Unquoted" is default, emits no additional characters and works fine
+    "Unquoted" is default state. We're writing characters as-is
     until first syntax character.
 
     Syntax characters
@@ -42,49 +43,55 @@
       Quoting: []
       Delimiters: " ", "\n"
 ]=]
+
 local WriteLeaf =
   function(self, Data)
     assert_string(Data)
 
-    local EncodedData = ''
+    -- Shortcuts:
+    local IsSyntaxChar = self.IsSyntaxChar
+    local OpeningQuote = self.SyntaxChars.QuoteOpening
+    local ClosingQuote = self.SyntaxChars.QuoteClosing
+    local SyntaxCharsRegexp = self.SyntaxCharsRegexp
 
     do
-      -- State: quoting state = (Unquoted, Quoted)
-      local QuoteState = 'Unquoted'
+      -- State: is character inside quotes?
+      local InQuotes = false
 
       -- Encode character
       local SerializeChar =
         function(Char)
+          local Result = Char
+
           if
-            (QuoteState == 'Unquoted') and
+            not InQuotes and
             (
-              (Char == '[') or
-              ((Char == '(') or (Char == ')')) or
-              ((Char == ' ') or (Char == '\n'))
+              IsSyntaxChar[Char] and
+              (Char ~= ClosingQuote)
             )
           then
-            QuoteState = 'Quoted'
-            return '[' .. Char
+            Result = OpeningQuote .. Char
+            InQuotes = true
           end
 
           if
-            (QuoteState == 'Quoted') and
-            (Char == ']')
+            InQuotes and
+            (Char == ClosingQuote)
           then
-            QuoteState = 'Unquoted'
-            return ']' .. Char
+            Result = ClosingQuote .. Char
+            InQuotes = false
           end
 
-          return Char
+          return Result
         end
 
       -- Quote syntax characters in data
-      EncodedData = string.gsub(Data, '[%(%)%[%]% %\n]', SerializeChar)
+      EncodedData = string.gsub(Data, SyntaxCharsRegexp, SerializeChar)
 
-      if (QuoteState == 'Quoted') then
+      if InQuotes then
         -- Close opened quote at end of value
-        EncodedData = EncodedData .. ']'
-        QuoteState = 'Unquoted'
+        EncodedData = EncodedData .. ClosingQuote
+        InQuotes = false
       end
 
       if (Data == '') then
@@ -94,7 +101,7 @@ local WriteLeaf =
           By default it's serialized to an empty string and lost.
           We are serializing it to [].
         ]]
-        EncodedData = '[]'
+        EncodedData = OpeningQuote .. ClosingQuote
       end
     end
 
@@ -103,3 +110,8 @@ local WriteLeaf =
 
 -- Exports:
 return WriteLeaf
+
+--[[
+  2024-09-03
+  2024-10-20
+]]
