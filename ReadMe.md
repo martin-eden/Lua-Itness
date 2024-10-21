@@ -24,10 +24,10 @@ Tree:
 
   Itness:
 
-    ( a ( b ) ( c ( d ) ) )
+    a ( b ) ( c ( d ) )
 
     Grouping via directional recursive brackets: ().
-    Stackable space characters for delimiter.
+    Stackable newline/space characters for delimiter.
 
 
 Special characters quoting:
@@ -38,14 +38,14 @@ Special characters quoting:
 
   Itness:
 
-    ( a[(] b[)] c[[] d] e[ ] [] )
+    a[(] b[)] c[[] d] e[ ] []
 
     Quoting via directional one-level quotes: [].
 
     One of representations (lazy quoting).
 
 
--- Martin, 2024-08/2024-09
+-- Martin, 2024-08/2024-10
 ```
 
 Comes with Lua-Itness back-and-forth converter with pretty printing
@@ -59,20 +59,22 @@ both for Lua and Itness data.
 
 ## Basic usage
 
-* Convert [`Data.lua`](Data.lua) to [`Data.is`](Data.is):
+* Convert [`It.is`](It.is) to [`Tree.lua`](Tree.lua):
 
-  ```$ lua RunSave.lua```
+  ```$ lua ItsTree.lua```
 
-* Convert `Data.is` to `Data.lua`:
+* Convert [`Tree.lua`](Tree.lua) to [`Tree.is`](Tree.is):
 
-  ```$ lua RunLoad.lua```
+  ```$ lua TreeIts.lua```
 
 
 ## Interesting design features
 
-* [Abstracted output](workshop/concepts/StreamIo/Output.lua)
-* [Formatting](Serializer/) is separated from data serialization
-  * Formatting via [event handler](Serializer/DelimitersWriter/Interface.lua)
+* [Syntax specification](Iteness/Syntax.lua) for programmatic users
+* [Abstracted input and output](workshop/concepts/StreamIo/)
+* [Formatting](Itness/Serializer/) is separated from data serialization
+  * Formatting via [events handler](Itness/Serializer/DelimitersWriter/OnEvent.lua)
+    and decision matrix.
 
 
 ## See also
