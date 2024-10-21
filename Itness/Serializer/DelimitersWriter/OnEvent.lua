@@ -80,8 +80,8 @@ local DecisionMatrix =
 ]]
 local EventHandler =
   function(self, What)
-    -- We're not on empty line if we wrote string
-    if (self.PrevItem == 'WriteString') then
+    -- We're not on empty line if we wrote something
+    if (self.PrevItem ~= 'Nothing') then
       self.IsOnEmptyLine = false
     end
 
