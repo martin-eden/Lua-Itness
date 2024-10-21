@@ -8,23 +8,26 @@
 
     .Output: [StreamIo.Output]
 
-      Output implementer.
+      Output implementer
 
     :StartList()
 
-      Emit sequence opening.
+      Emit sequence opening
 
     :EndList()
 
-      Emit sequence closure.
+      Emit sequence closure
 
     :WriteData(Data: str)
 
-      Encode string value.
+      Encode string value
 ]]
 
--- Last mod.: 2024-10-20
+-- Last mod.: 2024-10-21
 
+-- Imports:
+local Output = request('!.concepts.StreamIo.Output')
+local SyntaxChars = request('^.^.Syntax')
 local ToList = request('!.table.to_list')
 local MapValues = request('!.table.map_values')
 local ListToString = request('!.concepts.List.ToString')
@@ -32,27 +35,29 @@ local QuoteRegexp = request('!.lua.regexp.quote')
 
 local Exports =
   {
-    -- Generic output. Caller should set it to concrete implementer.
-    Output = request('!.concepts.StreamIo.Output'),
+    -- [Config] Generic output. Caller should set it to concrete implementer.
+    Output = Output,
 
-    -- Emit opening sequence character
+    -- [Main] Emit opening sequence character
     StartList = request('StartList'),
 
-    -- Emit closing sequence character
+    -- [Main] Emit closing sequence character
     EndList = request('EndList'),
 
-    -- Serialize string
+    -- [Main] Serialize string
     WriteLeaf = request('WriteLeaf'),
 
     -- [Internal] Syntax characters categorization
-    SyntaxChars = request('^.^.Syntax'),
+    SyntaxChars = SyntaxChars,
 
     -- [Internal] Map of syntax characters. Defined later here
     IsSyntaxChar = {},
+
     -- [Internal] Syntax chars regexp. Defined later here
     SyntaxCharsRegexp = '',
   }
 
+-- List of strings from folded table
 local SyntaxCharsList = ToList(Exports.SyntaxChars)
 
 -- "IsSyntaxChar[' '] = true"
