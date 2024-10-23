@@ -1,6 +1,6 @@
 -- Itness to Lua
 
--- Last mod.: 2024-10-21
+-- Last mod.: 2024-10-23
 
 package.path = package.path .. ';../../?.lua'
 require('workshop.base')
@@ -10,10 +10,10 @@ local InputFileName = 'It.is'
 local OutputFileName = 'Tree.lua'
 
 -- Imports:
-local SerializeTable = request('!.concepts.lua_table_code.save')
 local Reader = request('!.concepts.StreamIo.Input.File')
 local Writer = request('!.concepts.StreamIo.Output.File')
 local Parser = request('Itness.Parser.Interface')
+local SerializeTable = request('!.concepts.lua_table_code.save')
 
 -- Prepare input
 do
