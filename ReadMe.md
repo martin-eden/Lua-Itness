@@ -1,6 +1,6 @@
 ## What
 
-Labeled strings tree codec to Lua tables.
+_Itness_ is a list of items where each item is a string or list of items.
 
 ```
 "Itness", tree serialization format
@@ -26,8 +26,9 @@ Tree:
 
     a ( b ) ( c ( d ) )
 
-    Grouping via directional recursive brackets: ().
     Stackable newline/space characters for delimiter.
+    Quoting via directional one-level quotes: [].
+    Grouping via directional recursive brackets: ().
 
 
 Special characters quoting:
@@ -40,16 +41,13 @@ Special characters quoting:
 
     a[(] b[)] c[[] d] e[ ] []
 
-    Quoting via directional one-level quotes: [].
-
     One of representations (lazy quoting).
 
 
 -- Martin, 2024-08/2024-10
 ```
 
-Comes with Lua-Itness back-and-forth converter with pretty printing
-both for Lua and Itness data.
+Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 
 ## Requirements
