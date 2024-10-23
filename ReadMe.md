@@ -59,11 +59,11 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 * Convert [`It.is`](It.is) to [`Tree.lua`](Tree.lua):
 
-  ```$ lua ItsTree.lua```
+  `$ lua `[`ItsTree.lua`](ItsTree.lua)
 
 * Convert [`Tree.lua`](Tree.lua) to [`Tree.is`](Tree.is):
 
-  ```$ lua TreeIts.lua```
+  `$ lua `[`TreeIts.lua`](TreeIts.lua)
 
 
 ## Interesting design features
