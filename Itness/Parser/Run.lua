@@ -1,6 +1,6 @@
 -- Itness format parsing
 
--- Last mod.: 2024-10-21
+-- Last mod.: 2024-10-31
 
 -- Add to container non-nil value
 local AddTo =
@@ -43,27 +43,46 @@ Parse =
         break
       end
 
-      if (Char == OpeningGroup) and not InQuotes then
-        AddTo(Result, Term)
-        Term = nil
-        AddTo(Result, Parse(self))
-      elseif (Char == ClosingGroup) and not InQuotes then
-        AddTo(Result, Term)
-        return Result
-      elseif (Char == OpeningQuote) and not InQuotes then
-        InQuotes = true
-        --[[
-          We want "term" stop being nil when we encountered quote.
+      -- Flag that character is processed and do not need fallback logic
+      local IsProcessed = true
 
-          That's for empty string which is encoded as [].
-        ]]
-        Term = Term or ''
-      elseif (Char == ClosingQuote) and InQuotes then
-        InQuotes = false
-      elseif ((Char == Space) or (Char == Newline)) and not InQuotes then
-        AddTo(Result, Term)
-        Term = nil
-      else
+      if not InQuotes then
+        -- "(" - parse sublist
+        if (Char == OpeningGroup) then
+          AddTo(Result, Term)
+          Term = nil
+          AddTo(Result, Parse(self))
+        -- ")" - return result
+        elseif (Char == ClosingGroup) then
+          AddTo(Result, Term)
+          return Result
+        -- "[" - start quote
+        elseif (Char == OpeningQuote) then
+          InQuotes = true
+          --[[
+            We want "term" stop being nil when we encountered quote.
+
+            That's for empty string which is encoded as [].
+          ]]
+          Term = Term or ''
+        -- (" ", "\n") - add term to result
+        elseif ((Char == Space) or (Char == Newline)) then
+          AddTo(Result, Term)
+          Term = nil
+        else
+          IsProcessed = false
+        end
+      elseif InQuotes then
+        -- "]" - stop quote
+        if (Char == ClosingQuote) then
+          InQuotes = false
+        else
+          IsProcessed = false
+        end
+      end
+
+      -- It's not special character, just add it to term
+      if not IsProcessed then
         Term = Term or ''
         Term = Term .. Char
       end
@@ -82,4 +101,5 @@ return Parse
   2024-08-04
   2024-10-20
   2024-10-21
+  2024-10-31
 ]]
