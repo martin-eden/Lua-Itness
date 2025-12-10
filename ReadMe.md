@@ -1,5 +1,7 @@
 ## What
 
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/martin-eden/Lua-Itness)
+
 _Itness_ is a list of items where each item is a string or list of items.
 
 ```
