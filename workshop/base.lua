@@ -1,6 +1,11 @@
---[[
-  Lua base libraries extension. Used almost in any piece of my code.
+-- Personal framework bootloader
 
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-08
+]]
+
+--[[
   This module installs global function "request" which is based on
   "require" and makes possible relative module names.
 
@@ -8,16 +13,13 @@
   get dependencies list for any module. Which is used to create
   deploys without unused code.
 
-  Price for tracking dependencies  is global table "dependencies"
+  Price for tracking dependencies is global table "dependencies"
   and function "get_require_name".
 
   Lastly, global functions are added for convenience. Such functions
   are "new" and families of "is_<type>" and "assert_<type>".
 ]]
 
--- Last mod.: 2024-03-02
-
--- Export request function:
 local split_name =
   function(qualified_name)
     local prefix_name_pattern = '^(.+%.)([^%.]+)$'  -- a.b.c --> (a.b.) (c)
@@ -40,7 +42,7 @@ local unite_prefixes =
     while rel_prefix:find('^%^%.') do
       if (base_prefix == '') then
         error(
-          ([[Link "%s" is outside caller's prefix "%s".]]):format(
+          ([[Link "%s" is outside of caller's prefix "%s".]]):format(
             init_rel_prefix,
             init_base_prefix
           )
@@ -121,17 +123,26 @@ local request =
     return table.unpack(results)
   end
 
-local IsFirstRun = (_G.request == nil)
+local is_first_run = (_G.request == nil)
 
-if IsFirstRun then
+if is_first_run then
   _G.request = request
   _G.dependencies = dependencies
   _G.get_require_name = get_require_name
+  _G.get_base_prefix = function() return base_prefix end
 
   --[[
     At this point we installed "request()", so it's usable from
     outer code.
 
+    Also we made global "dependencies{}" and "get_require_name()".
+    "dependenices" is optional and not mission-critical. But stores
+    inter-module call edges which are tricky to obtain other ways.
+    "get_require_name()" is part of "request()" internal machinery.
+    Both has niche uses in my code tree tools. And they can't be
+    moved to module because it's request() that provides modules.
+  ]]
+  --[[
     Below we call optional modules which install additional
     global functions.
 
@@ -163,4 +174,5 @@ end
   2018-02
   2018-05
   2024-03
+  2026-05-08
 ]]

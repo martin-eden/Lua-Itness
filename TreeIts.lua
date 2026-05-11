@@ -1,40 +1,42 @@
 -- Lua to Itness
 
--- Last mod.: 2024-10-21
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-12
+]]
 
+--[[ Develop
 package.path = package.path .. ';../../?.lua'
+--]]
 require('workshop.base')
 
 local InputFileName = 'Tree.lua'
 local OutputFileName = 'Tree.is'
 
--- ( Imports
-local FileAsString = request('!.file_system.file.as_string')
-local StringToTable = request('!.concepts.lua_table_code.load')
--- local TableToString = request('!.concepts.lua_table_code.save')
-local Writer = request('!.concepts.StreamIo.Output.File')
+-- Imports:
+local FileAsString = request('!.convert.file_to_str')
+local StringToTable = request('!.convert.table_from_str')
+local OutputFile = request('!.concepts.StreamIo.Output.File')
 local Serializer = request('Itness.Serializer.Interface')
--- ) Imports
+--[[ Debug
+_G.t2s = request('!.convert.table_to_str')
+--]]
 
 print(string.format('Loading data from "%s".', InputFileName))
 
 local DataStr = FileAsString(InputFileName)
-local Sequence = StringToTable(DataStr)
+local ItnessTree = StringToTable(DataStr)
 
--- print(TableToString(Sequence))
-
-Writer:OpenFile(OutputFileName)
+OutputFile:Open(OutputFileName)
 
 print(string.format('Writing results to "%s".', OutputFileName))
 
-Serializer.Output = Writer
-Serializer:Run(Sequence)
+Serializer.Output = OutputFile
+Serializer:Run(ItnessTree)
 
-Writer:CloseFile()
+OutputFile:Close()
 
 --[[
-  2024-08-04
-  2024-09-04
-  2024-10-20
-  2024-10-21
+  2024 # # # #
+  2026-05-11
 ]]

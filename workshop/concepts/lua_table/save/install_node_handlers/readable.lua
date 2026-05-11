@@ -1,5 +1,11 @@
 -- Implementation of "readable" Lua table serialization
 
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-03
+]]
+
+-- Imports:
 local RawCompile = request('!.struc.compile')
 local IsName = request('!.concepts.lua.is_identifier')
 
@@ -43,16 +49,10 @@ Handlers.table =
   function(Node)
     -- Shortcut: empty table
     if (#Node == 0) then
-      Emit('{}')
+      Emit('{ }')
+
       return
     end
-
-    --[[
-      One-element table
-
-      We'll put it on one line and wont write trailing delimiter.
-    ]]
-    local TheOneAndOnly = (#Node == 1)
 
     -- Array part tracking for <CompactSequences>
     local LastIntKey = 0
@@ -63,9 +63,7 @@ Handlers.table =
     for Idx, El in ipairs(Node) do
       local Key, Value = El.key, El.value
 
-      if not TheOneAndOnly then
-        GoToEmptyLine()
-      end
+      GoToEmptyLine()
 
       --[[
         if CompactSequences
@@ -90,27 +88,23 @@ Handlers.table =
 
       Compile(Value)
 
-      if not TheOneAndOnly then
-        Emit(',')
-      end
+      Emit(',')
     end
 
-    if not TheOneAndOnly then
-      GoToEmptyLine()
-    end
+    GoToEmptyLine()
 
     Unindent()
     Emit('}')
   end
 
-local Merge = request('!.table.merge')
+local ForceMerge = request('!.table.merge_and_patch')
 local InstallMinimalHandlers = request('minimal')
 
--- Exports:
+-- Export:
 return
   function(a_Handlers, a_Printer, Options)
     InstallMinimalHandlers(a_Handlers, a_Printer, Options)
-    Handlers = Merge(a_Handlers, Handlers)
+    Handlers = ForceMerge(a_Handlers, Handlers)
     Printer = a_Printer
     if is_table(Options) and is_boolean(Options.compact_sequences) then
       CompactSequences = options.compact_sequences
@@ -120,4 +114,5 @@ return
 --[[
   2018-02-05
   2024-08-09
+  2026-05-03
 ]]

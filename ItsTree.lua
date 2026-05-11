@@ -1,8 +1,13 @@
 -- Itness to Lua
 
--- Last mod.: 2024-10-23
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-12
+]]
 
+--[[ Develop
 package.path = package.path .. ';../../?.lua'
+--]]
 require('workshop.base')
 
 -- [Config]
@@ -10,42 +15,39 @@ local InputFileName = 'It.is'
 local OutputFileName = 'Tree.lua'
 
 -- Imports:
-local Reader = request('!.concepts.StreamIo.Input.File')
-local Writer = request('!.concepts.StreamIo.Output.File')
+local InputFile = request('!.concepts.StreamIo.Input.File')
+local OutputFile = request('!.concepts.StreamIo.Output.File')
 local Parser = request('Itness.Parser.Interface')
-local SerializeTable = request('!.concepts.lua_table_code.save')
+local SerializeTable = request('!.convert.table_to_str')
 
 -- Prepare input
 do
-  Reader:OpenFile(InputFileName)
+  InputFile:Open(InputFileName)
 
   print(string.format('Reading data from "%s".', InputFileName))
 end
 
 -- Prepare output
 do
-  Writer:OpenFile(OutputFileName)
+  OutputFile:Open(OutputFileName)
   print(string.format('Writing data to "%s".', OutputFileName))
 end
 
-Parser.Input = Reader
-local Sequence = Parser:Run()
+Parser.Input = InputFile
+local ItnessTree = Parser:Run()
 
-Reader:CloseFile()
+InputFile:Close()
 
-if not is_table(Sequence) then
+if not is_table(ItnessTree) then
   print('[Error] Parse error.')
   return
 end
 
-Writer:Write(SerializeTable(Sequence))
+OutputFile:Write(SerializeTable(ItnessTree))
 
-Writer:CloseFile()
+OutputFile:Close()
 
 --[[
-  2024-08-04
-  2024-08-09
-  2024-09-04
-  2024-10-20
-  2024-10-21
+  2024 # # # # #
+  2026-05-12
 ]]
