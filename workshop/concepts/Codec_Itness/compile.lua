@@ -1,8 +1,14 @@
--- Itness format serialization
+-- Write strings tree to output stream
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-23
+  Last mod.: 2026-05-26
+]]
+
+--[[
+  Contract
+
+  Function never fails.
 ]]
 
 -- Imports:
@@ -37,8 +43,8 @@ local compile_root =
     DataWriter:Init()
 
     DelimitersWriter.Output = Output
-    DelimitersWriter.space_char = Syntax.Delimiters.Space
-    DelimitersWriter.newline_char = Syntax.Delimiters.Newline
+    DelimitersWriter.space_char = Syntax.delimiters_space_char
+    DelimitersWriter.newline_char = Syntax.delimiters_newline_char
     DelimitersWriter:Init()
 
     for _, Node in ipairs(Tree) do

@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-23
+  Last mod.: 2026-05-26
 ]]
 
 --[[ Develop
@@ -20,16 +20,15 @@ local Config =
 local file_to_str = request('!.convert.file_to_str')
 local table_from_str = request('!.convert.table_from_str')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
-local Itness = request('!.concepts.Itness.Interface')
+local Itness = request('!.concepts.Codec_Itness.Interface')
 
 print(string.format('Loading data from "%s".', Config.input_file_name))
-
 local DataStr = file_to_str(Config.input_file_name)
+
 local ItnessTree = table_from_str(DataStr)
 
-OutputFile:Open(Config.output_file_name)
-
 print(string.format('Writing results to "%s".', Config.output_file_name))
+OutputFile:Open(Config.output_file_name)
 
 Itness:Compile(ItnessTree, OutputFile)
 

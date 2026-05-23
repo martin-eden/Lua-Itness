@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-23
+  Last mod.: 2026-05-26
 ]]
 
 --[[
@@ -13,10 +13,6 @@
 
   Problem reminder
 
-    Terminal value is string. Container (aka list aka sequence) is
-    encoded like "(" .. ")". And items delimiter is stackable " "'s
-    or "\n"'s.
-
     Syntax characters
 
       Framing: ()
@@ -26,14 +22,13 @@
     What if value is "a b("?
 
     One-level directed quotes [] are coming to rescue: "[a b(]"!
-    Or "a[ b(]" if you want to open and close quote only when you
+    Or "a[ b(]" if we want to open and close quote only when we
     absolutely need to.
 
-    What if value is "[" or "]"?
+    What if the value is "[" or "]"?
 
     Quoting is one-level, first "[" starts quote, first "]" ends
-    quote. So "[" is serialized as "[[]" and "]" is serialized
-    as "]".
+    quote. So "[" is serialized as "[[]" and "]" is serialized as "]".
 
   Implementation
 
@@ -54,8 +49,8 @@
 
 local WriteLeaf =
   function(Me, str)
-    local quote_open_char = Me.Syntax.QuoteOpening
-    local quote_close_char = Me.Syntax.QuoteClosing
+    local quote_open_char = Me.Syntax.quote_open_char
+    local quote_close_char = Me.Syntax.quote_close_char
     local IsSyntaxChar_Map = Me.IsSyntaxChar_Map
     local syntax_chars_regexp = Me.syntax_chars_regexp
 
@@ -90,21 +85,16 @@ local WriteLeaf =
       end
 
     -- Quote syntax characters in data
-    encoded_str = string.gsub(str, syntax_chars_regexp, encode_char)
+    local encoded_str = string.gsub(str, syntax_chars_regexp, encode_char)
 
+    -- Close opened quote at end of string
     if in_quotes then
-      -- Close opened quote at end of string
       encoded_str = encoded_str .. quote_close_char
       in_quotes = false
     end
 
+    -- Special case: empty string. Serialize to "[]"
     if (str == '') then
-      --[[
-        Special case: empty string
-
-        By default it's serialized to an empty string and lost.
-        We are serializing it to [].
-      ]]
       encoded_str = quote_open_char .. quote_close_char
     end
 

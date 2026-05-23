@@ -2,34 +2,16 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-23
+  Last mod.: 2026-05-26
 ]]
 
 --[[
   This class knows nothing about structure and just writes to output
   syntax-specific strings and does value serialization.
-
-  Interface
-
-    .Output: [StreamIo.Output]
-
-      Output implementer
-
-    :StartList()
-
-      Emit sequence opening
-
-    :EndList()
-
-      Emit sequence closure
-
-    :WriteData(Data: str)
-
-      Encode string value
 ]]
 
 -- Imports:
-local fold_tree = request('!.table.fold')
+local get_values = request('!.table.get_values')
 local map_values = request('!.table.map_values')
 local list_to_string = request('!.concepts.list.to_string')
 local lua_regexp_quote = request('!.lua.regexp.quote')
@@ -39,33 +21,38 @@ local Interface =
     -- [Config] Output stream
     Output = { },
 
-    -- [Config] Syntax chars structure
+    -- [Config] Named syntax characters
     Syntax = { },
 
     -- [Main] Initialize state
     Init =
       function(Me)
-        local SyntaxCharsList = fold_tree(Me.Syntax)
+        local SyntaxList = get_values(Me.Syntax)
 
-        Me.IsSyntaxChar_Map = map_values(SyntaxCharsList)
+        Me.IsSyntaxChar_Map = map_values(SyntaxList)
 
         Me.syntax_chars_regexp =
           '[' ..
-          lua_regexp_quote(list_to_string(SyntaxCharsList)) ..
+          lua_regexp_quote(list_to_string(SyntaxList)) ..
           ']'
       end,
 
-    -- [Main] Emit opening sequence character
-    StartList = request('StartList'),
+    -- [Main] Emit group opening character
+    StartList =
+      function(Me)
+        Me.Output:Write(Me.Syntax.group_open_char)
+      end,
 
-    -- [Main] Emit closing sequence character
-    EndList = request('EndList'),
+    -- [Main] Emit group closing character
+    EndList =
+      function(Me)
+        Me.Output:Write(Me.Syntax.group_close_char)
+      end,
 
     -- [Main] Serialize string
     WriteLeaf = request('WriteLeaf'),
 
     -- [Internals]:
-    SyntaxChars = SyntaxChars,
     IsSyntaxChar_Map = { },
     syntax_chars_regexp = '',
   }
@@ -74,6 +61,5 @@ local Interface =
 return Interface
 
 --[[
-  2024-09-03
-  2024-10-20
+  2024 # #
 ]]

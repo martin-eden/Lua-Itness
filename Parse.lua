@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-23
+  Last mod.: 2026-05-26
 ]]
 
 --[[ Develop
@@ -19,23 +19,12 @@ local Config =
 
 -- Imports:
 local InputFile = request('!.concepts.StreamIo.Input.File')
+local Itness = request('!.concepts.Codec_Itness.Interface')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
-local Itness = request('!.concepts.Itness.Interface')
 local table_to_str = request('!.convert.table_to_str')
 
--- Prepare input
-do
-  print(string.format('Reading data from "%s".', Config.input_file_name))
-
-  InputFile:Open(Config.input_file_name)
-end
-
--- Prepare output
-do
-  print(string.format('Writing data to "%s".', Config.output_file_name))
-
-  OutputFile:Open(Config.output_file_name)
-end
+print(string.format('Reading data from "%s".', Config.input_file_name))
+InputFile:Open(Config.input_file_name)
 
 local ItnessTree = Itness:Parse(InputFile)
 
@@ -45,6 +34,9 @@ if not is_table(ItnessTree) then
   print('[Error] Parse error.')
   return
 end
+
+print(string.format('Writing data to "%s".', Config.output_file_name))
+OutputFile:Open(Config.output_file_name)
 
 OutputFile:Write(table_to_str(ItnessTree))
 
