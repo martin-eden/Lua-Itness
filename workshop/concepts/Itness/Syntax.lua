@@ -1,6 +1,11 @@
--- Categorized Itness format syntax characters
+-- Itness format syntax characters
 
-return
+--[[
+  Author: Martin Eden
+  Last mod.: 2026-05-23
+]]
+
+local SyntaxChars =
   {
     QuoteOpening = '[',
     QuoteClosing = ']',
@@ -12,6 +17,9 @@ return
         Newline = '\n',
       },
   }
+
+-- Export:
+return SyntaxChars
 
 --[[
   2024-10-21
