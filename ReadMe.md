@@ -1,6 +1,8 @@
+[![DeepWiki][DeepWiki_Logo]][DeepWiki_Repo] (sometimes AI explains it better)
+
 ## What
 
-[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/martin-eden/Lua-Itness)
+2024, 2026
 
 _Itness_ is a list of items where each item is a string or list of items.
 
@@ -54,29 +56,45 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 ## Requirements
 
-* Lua 5.3 (5.4 is fine too)
+* Lua 5.3 (5.4 and 5.5 are fine too)
 
 
 ## Basic usage
 
-* Convert [`It.is`](It.is) to [`Tree.lua`](Tree.lua):
+* Convert [`It.is`][it_is] to [`Tree.lua`][tree_lua]:
 
-  `$ lua `[`ItsTree.lua`](ItsTree.lua)
+  `$ lua `[`Parse.lua`][Parse]
 
-* Convert [`Tree.lua`](Tree.lua) to [`Tree.is`](Tree.is):
+* Convert [`Tree.lua`][tree_lua] to [`Tree.is`][tree_is]:
 
-  `$ lua `[`TreeIts.lua`](TreeIts.lua)
+  `$ lua `[`Compile.lua`][Compile]
 
 
 ## Interesting design features
 
-* [Syntax specification](Itness/Syntax.lua) for programmatic users
-* [Abstracted input and output](workshop/concepts/StreamIo/)
-* [Formatting](Itness/Serializer/) is separated from data serialization
-  * Formatting via [events handler](Itness/Serializer/DelimitersWriter/OnEvent.lua)
-    and decision matrix.
+* [Syntax specification][Syntax] is the only place where we use hardcoded characters
+* [Abstracted input and output][StreamIo]
+* Formatting is [separated][DataDelims] from data serialization
+  * Formatting via [events handler][EventHandler] and decision matrix.
 
 
 ## See also
 
-  * [My other repositories](https://github.com/martin-eden/contents)
+* [My other repositories][repos]
+
+[DeepWiki_Logo]: https://deepwiki.com/badge.svg
+[DeepWiki_Repo]: https://deepwiki.com/martin-eden/Lua-Itness
+
+[it_is]: It.is
+[tree_lua]: Tree.lua
+[tree_is]: Tree.is
+
+[Parse]: Parse.lua
+[Compile]: Compile.lua
+
+[Syntax]: workshop/concepts/Itness/Syntax.lua
+[StreamIo]: workshop/concepts/StreamIo/
+[DataDelims]: workshop/concepts/Itness/Internals/
+[EventHandler]: workshop/concepts/Itness/Internals/DelimitersWriter/HandleEvent.lua
+
+[repos]: https://github.com/martin-eden/contents
