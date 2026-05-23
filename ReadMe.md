@@ -80,6 +80,7 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 ## See also
 
+* [`workshop`][workshop] -- My personal Lua framework where this codec lives
 * [My other repositories][repos]
 
 [DeepWiki_Logo]: https://deepwiki.com/badge.svg
@@ -97,4 +98,5 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 [DataDelims]: workshop/concepts/Itness/Internals/
 [EventHandler]: workshop/concepts/Itness/Internals/DelimitersWriter/HandleEvent.lua
 
+[workshop]: https://github.com/martin-eden/workshop
 [repos]: https://github.com/martin-eden/contents
