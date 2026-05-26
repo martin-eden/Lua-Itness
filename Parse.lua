@@ -30,11 +30,6 @@ local ItnessTree = Itness:Parse(InputFile)
 
 InputFile:Close()
 
-if not is_table(ItnessTree) then
-  print('[Error] Parse error.')
-  return
-end
-
 print(string.format('Writing data to "%s".', Config.output_file_name))
 OutputFile:Open(Config.output_file_name)
 
