@@ -4,7 +4,8 @@
 
 2024, 2026
 
-_Itness_ is a list of items where each item is a string or list of items.
+_Itness_ is a strings tree serialization format. It aims for minimalism,
+not featurism. [Example][Example].
 
 ```
 "Itness", tree serialization format
@@ -54,11 +55,6 @@ Special characters quoting:
 Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 
-## Requirements
-
-* Lua 5.3 (5.4 and 5.5 are fine too)
-
-
 ## Basic usage
 
 * Convert [`It.is`][it_is] to [`Tree.lua`][tree_lua]:
@@ -70,12 +66,26 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
   `$ lua `[`Compile.lua`][Compile]
 
 
+## Comparison with other tree formats
+
+| Format | Comments | Free whitespaces | Named values | Typed values |
+|-------:|:--------:|:----------------:|:------------:|:------------:|
+| Is     |    ☐     |        ☑         |      ☐       |      ☐       |
+| JSON   |    ☐     |        ☑         |      ☑       |      ☑       |
+| YAML   |    ☑     |        ☐         |      ☑       |      ☑       |
+
+
 ## Interesting design features
 
 * [Syntax specification][Syntax] is the only place where we use hardcoded characters
 * [Abstracted input and output][StreamIo]
 * Formatting is [separated][DataDelims] from data serialization
-  * Formatting via [events handler][EventHandler] and decision matrix.
+  * Formatting via [events handler][EventHandler] and decision matrix
+
+
+## Requirements
+
+* Lua 5.3 (5.4 and 5.5 are fine too)
 
 
 ## See also
@@ -85,6 +95,8 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 [DeepWiki_Logo]: https://deepwiki.com/badge.svg
 [DeepWiki_Repo]: https://deepwiki.com/martin-eden/Lua-Itness
+
+[Example]: Sample.md
 
 [it_is]: It.is
 [tree_lua]: Tree.lua
