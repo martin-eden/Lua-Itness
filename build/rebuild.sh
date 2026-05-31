@@ -3,6 +3,8 @@
 # Create "workshop/" directory with needed files from current
 # version of "workshop" code hive.
 
+set -eu
+
 cd ..
 
 rm -rf workshop/
