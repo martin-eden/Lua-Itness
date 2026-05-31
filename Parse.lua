@@ -19,7 +19,7 @@ local Config =
 
 -- Imports:
 local InputFile = request('!.concepts.StreamIo.Input.File')
-local Itness = request('!.concepts.Codec_Itness.Interface')
+local Itness = request('!.concepts.Codec_Itness')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
 local table_to_str = request('!.convert.table_to_str')
 
