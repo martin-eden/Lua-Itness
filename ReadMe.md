@@ -105,10 +105,10 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 [Parse]: Parse.lua
 [Compile]: Compile.lua
 
-[Syntax]: workshop/concepts/Codec_Itness/Syntax.lua
+[Syntax]: workshop/concepts/codec_itness/common/Syntax.lua
 [StreamIo]: workshop/concepts/StreamIo/
-[DataDelims]: workshop/concepts/Codec_Itness/Internals/
-[EventHandler]: workshop/concepts/Codec_Itness/Internals/DelimitersWriter/HandleEvent.lua
+[DataDelims]: workshop/concepts/codec_itness/compile/
+[EventHandler]: workshop/concepts/codec_itness/compile/DelimitersWriter/HandleEvent.lua
 
 [workshop]: https://github.com/martin-eden/workshop
 [repos]: https://github.com/martin-eden/contents
