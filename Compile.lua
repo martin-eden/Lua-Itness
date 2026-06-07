@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-26
+  Last mod.: 2026-06-07
 ]]
 
 --[[ Develop
@@ -20,22 +20,22 @@ local Config =
 local file_to_str = request('!.convert.file_to_str')
 local table_from_str = request('!.convert.table_from_str')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
-local Itness = request('!.concepts.Codec_Itness')
+local itness_compile = request('!.concepts.codec_itness.compile')
 
 print(string.format('Loading data from "%s".', Config.input_file_name))
-local DataStr = file_to_str(Config.input_file_name)
+local input_str = file_to_str(Config.input_file_name)
 
-local ItnessTree = table_from_str(DataStr)
+local ItnessTree = table_from_str(input_str)
 
 print(string.format('Writing results to "%s".', Config.output_file_name))
-OutputFile:Open(Config.output_file_name)
-
-Itness:Compile(ItnessTree, OutputFile)
-
-OutputFile:Close()
+do
+  OutputFile:Open(Config.output_file_name)
+  itness_compile(ItnessTree, OutputFile)
+  OutputFile:Close()
+end
 
 --[[
   2024 # # # #
-  2026-05-11
-  2026-05-23
+  2026-05 # #
+  2026-06-07
 ]]

@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-26
+  Last mod.: 2026-06-07
 ]]
 
 --[[ Develop
@@ -19,26 +19,28 @@ local Config =
 
 -- Imports:
 local InputFile = request('!.concepts.StreamIo.Input.File')
-local Itness = request('!.concepts.Codec_Itness')
+local itness_parse = request('!.concepts.codec_itness.parse')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
 local table_to_str = request('!.convert.table_to_str')
 
+local ItnessTree
+
 print(string.format('Reading data from "%s".', Config.input_file_name))
-InputFile:Open(Config.input_file_name)
-
-local ItnessTree = Itness:Parse(InputFile)
-
-InputFile:Close()
+do
+  InputFile:Open(Config.input_file_name)
+  ItnessTree = itness_parse(InputFile)
+  InputFile:Close()
+end
 
 print(string.format('Writing data to "%s".', Config.output_file_name))
-OutputFile:Open(Config.output_file_name)
-
-OutputFile:Write(table_to_str(ItnessTree))
-
-OutputFile:Close()
+do
+  OutputFile:Open(Config.output_file_name)
+  OutputFile:Write(table_to_str(ItnessTree))
+  OutputFile:Close()
+end
 
 --[[
   2024 # # # # #
-  2026-05-12
-  2026-05-23
+  2026-05 # #
+  2026-06-07
 ]]
