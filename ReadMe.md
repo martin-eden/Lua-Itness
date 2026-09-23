@@ -52,19 +52,6 @@ Special characters quoting:
 -- Martin, 2024-08/2024-10
 ```
 
-Comes with Lua-Itness back-and-forth converter with pretty printing.
-
-
-## Basic usage
-
-* Convert [`It.is`][it_is] to [`Tree.lua`][tree_lua]:
-
-  `$ lua `[`Parse.lua`][Parse]
-
-* Convert [`Tree.lua`][tree_lua] to [`Tree.is`][tree_is]:
-
-  `$ lua `[`Compile.lua`][Compile]
-
 
 ## Comparison with other tree formats
 
@@ -83,9 +70,30 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
   * Formatting via [events handler][EventHandler] and decision matrix
 
 
+## Shipment
+
+[Recode][Recode] is a command-line tool that recodes data in this format.
+
+It's used mostly for testing. Input format for it is
+
+```
+[ input_file_name [output_file_name] ]
+```
+
+Default `input_file_name` is [`it.is`][it_is].
+Default `output_file_name` is [`recoded.it.is`][recoded_it_is]
+
+Main usage is load/save data to/from Lua table.
+
+Serializing Lua table is [another][lts] project.
+And code for it weights more than this codec.
+(That's why we have this codec.)
+
+
 ## Requirements
 
-* Lua 5.3 (5.4 and 5.5 are fine too)
+* Linux
+* Lua 5.5 (5.4, 5.3)
 
 
 ## See also
@@ -98,12 +106,10 @@ Comes with Lua-Itness back-and-forth converter with pretty printing.
 
 [Example]: Sample.md
 
-[it_is]: It.is
-[tree_lua]: Tree.lua
-[tree_is]: Tree.is
-
-[Parse]: Parse.lua
-[Compile]: Compile.lua
+[Recode]: Recode.lua
+[it_is]: it.is
+[recoded_it_is]: recoded.it.is
+[lts]: https://github.com/martin-eden/lua_table_serializer
 
 [Syntax]: workshop/concepts/codec_itness/common/Syntax.lua
 [StreamIo]: workshop/concepts/StreamIo/
