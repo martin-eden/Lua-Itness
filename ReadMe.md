@@ -1,8 +1,55 @@
 [![DeepWiki][DeepWiki_Logo]][DeepWiki_Repo] (sometimes AI explains it better)
 
-## What
-
-2024, 2026
+<table>
+  <tr>
+    <th colspan=3>Itness</th>
+  </tr>
+  <tr>
+    <td>
+      <table>
+        <tr>
+          <th>Updated</th>
+          <td>2026-09-23</td>
+        </tr>
+        <tr>
+          <th>Created</th>
+          <td>2024-08</td>
+        </tr>
+        <tr>
+          <th>Code size</th>
+          <td>&lt; 40 K</td>
+        </tr>
+        <tr>
+          <th>License</th>
+          <td>LGPL3</td>
+        </tr>
+      </table>
+    </td>
+    <td align=center>
+      Strings tree codec
+    </td>
+    <td>
+      <table>
+        <tr>
+          <th>Input</th>
+          <th>Output</th>
+        </tr>
+        <tr>
+          <td>
+            table
+            <br>
+            <code>.is</code>
+          </td>
+          <td>
+            <code>.is</code>
+            <br>
+            table
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
 
 _Itness_ is a strings tree serialization format. It aims for minimalism,
 not featurism. [Example][Example].
@@ -29,7 +76,7 @@ Tree:
 
   Itness:
 
-    a ( b ) ( c ( d ) )
+    ( a ( b ) ( c ( d ) ) )
 
     Stackable newline/space characters for delimiter.
     Quoting via directional one-level quotes: [].
@@ -40,16 +87,14 @@ Special characters quoting:
 
   Lua:
 
-    { 'a(', 'b)', 'c[', 'd]', 'e ', '' }
+    { '(', ')', '[', ']', ' ', '' }
 
   Itness:
 
-    a[(] b[)] c[[] d] e[ ] []
-
-    One of representations (lazy quoting).
+    ( [(] [)] [[] ] [ ] [] )
 
 
--- Martin, 2024-08/2024-10
+-- Martin, 2024-08
 ```
 
 
@@ -72,16 +117,17 @@ Special characters quoting:
 
 ## Shipment
 
-[Recode][Recode] is a command-line tool that recodes data in this format.
+Repository contains
 
-It's used mostly for testing. Input format for it is
+  * Compiled code in [`deploy/`](deploy)
+  * Sample input/output in [`samples/`](samples/)
+  * Complete source code in [`src/`](src)
+  * Rebuild script and tools in [`builder/`](builder/)
 
-```
-[ input_file_name [output_file_name] ]
-```
+[`RecodeIs`][RecodeIs] is a command-line tool that recodes data in this format.
 
-Default `input_file_name` is [`it.is`][it_is].
-Default `output_file_name` is [`recoded.it.is`][recoded_it_is]
+It's used mostly for testing.
+Input format for it is `input_file_name output_file_name`.
 
 Main usage is load/save data to/from Lua table.
 
@@ -106,9 +152,7 @@ And code for it weights more than this codec.
 
 [Example]: Sample.md
 
-[Recode]: Recode.lua
-[it_is]: it.is
-[recoded_it_is]: recoded.it.is
+[RecodeIs]: src/RecodeIs.lua
 [lts]: https://github.com/martin-eden/lua_table_serializer
 
 [Syntax]: workshop/concepts/codec_itness/common/Syntax.lua
