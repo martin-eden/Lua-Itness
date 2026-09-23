@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-04-24
+  Last mod.: 2026-09-23
 ]]
 
 --[[
@@ -28,8 +28,7 @@ local create_deploy_script = request('!.system.create_deploy_script')
 local ModulesList =
   {
     'workshop.base',
-    'Compile',
-    'Parse',
+    'Recode',
   }
 
 create_deploy_script(ModulesList)
