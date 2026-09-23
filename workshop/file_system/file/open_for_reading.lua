@@ -2,23 +2,22 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-27
+  Last mod.: 2026-09-14
 ]]
 
 --[[
-  If there is error opening file -- returns nil.
-  Else returns file object.
+  If there is error opening file -- explodes. Else returns file object.
 ]]
 
-local open_for_reading =
-  function(pathname)
-    return ( io.open(pathname, 'rb') )
-  end
+local open_file = request('open')
 
 -- Export:
-return open_for_reading
+return
+  function(pathname)
+    return open_file(pathname, 'rb')
+  end
 
 --[[
-  2024-08-09
-  2026-05-27
+  2024 #
+  2026 # #
 ]]

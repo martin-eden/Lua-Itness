@@ -2,35 +2,64 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-05-11
+  Last mod.: 2026-09-02
 ]]
 
--- Imports:
-local create_instance = request('!.table.create_instance')
+--[[
+  Data storage format
 
-local Core
-Core =
-  {
-    value = 0,
-    min_value = 0,
-    max_value = 5,
-  }
+    1 [i] Current value
+    2 [i] Minimum value
+    3 [i] Maximum value
+]]
 
 local Interface
+
+local create
+do
+  local DefaultCore = { 0, 0, 5 }
+  local create_instance = request('!.table.create_instance')
+  create =
+    function(OptCore)
+      return create_instance(OptCore or DefaultCore, Interface)
+    end
+end
+
+local min = math.min
+local max = math.max
+
 Interface =
   {
+    create = create,
+
+    GetMinValue = function(Me) return Me[2] end,
+    SetMinValue = function(Me, val) Me[2] = val end,
+
+    GetMaxValue = function(Me) return Me[3] end,
+    SetMaxValue = function(Me, val) Me[3] = val end,
+
+    GetValue =
+      function(Me)
+        local min_value = Me:GetMinValue()
+        local max_value = Me:GetMaxValue()
+
+        return min(max(Me[1], min_value), max_value)
+      end,
+    SetValue =
+      function(Me, arg_value)
+        local min_value = Me:GetMinValue()
+        local max_value = Me:GetMaxValue()
+
+        Me[1] = min(max(arg_value, min_value), max_value)
+      end,
+
     IncBy =
       function(Me, value)
-        Me:SetValue(Me:GetValue() + value)
+        Me[1] = Me[1] + value
       end,
     DecBy =
       function(Me, value)
-        Me:SetValue(Me:GetValue() - value)
-      end,
-
-    create =
-      function(OptCore)
-        return create_instance(OptCore or Core, Interface)
+        Me[1] = Me[1] - value
       end,
 
     Inc =
@@ -41,20 +70,12 @@ Interface =
       function(Me)
         Me:DecBy(1)
       end,
-
-    GetValue =
-      function(Me)
-        return math.max(math.min(Me.value, Me.max_value), Me.min_value)
-      end,
-    SetValue =
-      function(Me, value)
-        Me.value = math.max(math.min(value, Me.max_value), Me.min_value)
-      end,
   }
 
 -- Export:
 return Interface
 
 --[[
-  2026-05-11
+  2026 # #
+  2026-09-02
 ]]
