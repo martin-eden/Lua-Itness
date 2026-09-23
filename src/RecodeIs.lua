@@ -13,12 +13,12 @@
 ]]
 
 --[[ Develop
-package.path = package.path .. ';../../?.lua'
+package.path = package.path .. ';../../../?.lua'
 --]]
 require('workshop.base')
 
-local input_file_name = arg[1] or 'it.is'
-local output_file_name = arg[2] or 'recoded.it.is'
+local input_file_name = arg[1]
+local output_file_name = arg[2]
 
 local InputFile = request('!.concepts.StreamIo.Input.File')
 local OutputFile = request('!.concepts.StreamIo.Output.File')
@@ -28,6 +28,9 @@ local itness_compile = request('!.concepts.codec_itness.compile')
 local str_format = string.format
 
 local ItnessNode
+
+assert(input_file_name)
+assert(output_file_name)
 
 print(str_format('Reading data from "%s".', input_file_name))
 do
