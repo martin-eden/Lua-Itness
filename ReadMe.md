@@ -9,7 +9,7 @@
       <table>
         <tr>
           <th>Updated</th>
-          <td>2026-09-23</td>
+          <td>2026-10-14</td>
         </tr>
         <tr>
           <th>Created</th>
@@ -17,7 +17,7 @@
         </tr>
         <tr>
           <th>Code size</th>
-          <td>&lt; 40 K</td>
+          <td>&lt; 50 K</td>
         </tr>
         <tr>
           <th>License</th>
