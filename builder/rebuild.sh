@@ -4,7 +4,7 @@
 
 #
 # Author: Martin Eden
-# Last mod.: 2026-09-23
+# Last mod.: 2026-10-14
 #
 
 #
@@ -32,10 +32,7 @@ cd ../src
 
 rm -r -f workshop/
 
-lua ../builder/create_deploy.lua
-
-bash deploy.sh
-rm deploy.sh
+lua ../builder/deploy.lua
 
 mv deploy/workshop/ .
 rm -r -f deploy/
@@ -72,4 +69,3 @@ lua deploy/RecodeIs.lua samples/it.is samples/recoded.it.is
 
 # 2026 # # # # #
 # 2026-09-23
-
