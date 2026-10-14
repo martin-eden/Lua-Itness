@@ -3,185 +3,158 @@ package.preload['RecodeIs'] =
     require('workshop.base')
     local input_file_name = arg[1]
     local output_file_name = arg[2]
-    local InputFile = request('!.concepts.StreamIo.Input.File')
-    local OutputFile = request('!.concepts.StreamIo.Output.File')
-    local itness_parse = request('!.concepts.codec_itness.parse')
-    local itness_compile = request('!.concepts.codec_itness.compile')
-    local str_format = string.format
-    local ItnessNode
     assert(input_file_name)
     assert(output_file_name)
+    local str_format = string.format
+    local InputFile
+    local ItnessNode
+    local OutputFile
     print(str_format('Reading data from "%s".', input_file_name))
     do
-      InputFile:Open(input_file_name)
+      local InputFileClass = request('!.concepts.StreamIo.Input.File')
+      local itness_parse = request('!.concepts.codec_itness.parse')
+      InputFile = InputFileClass.create(input_file_name)
+      InputFile:Open()
       ItnessNode = itness_parse(InputFile)
       InputFile:Close()
     end
     print(str_format('Writing results to "%s".', output_file_name))
     do
-      OutputFile:Open(output_file_name)
+      local OutputFileClass = request('!.concepts.StreamIo.Output.File')
+      local itness_compile = request('!.concepts.codec_itness.compile')
+      OutputFile = OutputFileClass.create(output_file_name)
+      OutputFile:Open()
       itness_compile(ItnessNode, OutputFile)
       OutputFile:Close()
     end
   end
 package.preload['workshop.base'] =
   function(...)
-    local str_match = string.match
-    local str_find = string.find
-    local str_sub = string.sub
-    local tbl_pack = table.pack
-    local tbl_unpack = table.unpack
-    local require = require
-    local empty = ''
+    local set_base_prefix
+    local split_name
+    local get_base_prefix
+    local request
     local stack_init
-    local stack_get
     local stack_add
     local stack_remove
     do
-      local Names
-      local depth
-      stack_init =
-        function()
-          Names = {}
-          depth = 1
-        end
-      stack_get =
-        function()
-          return Names[depth]
-        end
-      stack_add =
-        function(prefix, name)
-          depth = depth + 1
-          Names[depth] = { prefix = prefix, name = name }
-        end
-      stack_remove =
-        function()
-          depth = depth - 1
-        end
-    end
-    local get_caller_prefix =
-      function()
-        local NameRec = stack_get()
-        if not NameRec then
-          return empty
-        end
-        return NameRec.prefix
+      local str_match = string.match
+      local str_find = string.find
+      local str_sub = string.sub
+      local tbl_pack = table.pack
+      local tbl_unpack = table.unpack
+      local require = require
+      local empty = ''
+      local stack_get
+      do
+        local Names
+        local depth
+        stack_init =
+          function()
+            Names = {}
+            depth = 1
+          end
+        stack_get =
+          function()
+            return Names[depth]
+          end
+        stack_add =
+          function(prefix, name)
+            depth = depth + 1
+            Names[depth] = { prefix = prefix, name = name }
+          end
+        stack_remove =
+          function()
+            depth = depth - 1
+          end
       end
-    local get_caller_name =
-      function()
-        local NameRec = stack_get()
-        if not NameRec then
-          return empty
+      local get_caller_prefix =
+        function()
+          local NameRec = stack_get()
+          if not NameRec then
+            return empty
+          end
+          return NameRec.prefix
         end
-        return NameRec.prefix .. NameRec.name
+      do
+        local prefix_name_capture = '^(.+%.)([^%.]+)$'
+        split_name =
+          function(qualified_name)
+            local prefix, name =
+              str_match(qualified_name, prefix_name_capture)
+            if not prefix then
+              prefix = empty
+              if str_find(qualified_name, '%.') then
+                name = empty
+              else
+                name = qualified_name
+              end
+            end
+            return prefix, name
+          end
       end
-    local split_name
-    do
-      local prefix_name_capture = '^(.+%.)([^%.]+)$'
-      split_name =
+      local apply_rel_prefix
+      do
+        local uplevel_capture = '(.+%.)[^%.]-%.$'
+        apply_rel_prefix =
+          function(base_prefix, rel_prefix)
+            while (str_sub(rel_prefix, 1, 2) == '^.') do
+              if (base_prefix == empty) then
+                error("Link is outside of caller's prefix.")
+              end
+              base_prefix =
+                str_match(base_prefix, uplevel_capture) or empty
+              rel_prefix = str_sub(rel_prefix, 3)
+            end
+            return base_prefix .. rel_prefix
+          end
+      end
+      do
+        local base_prefix
+        set_base_prefix =
+          function(arg_base_prefix)
+            base_prefix = arg_base_prefix
+          end
+        get_base_prefix =
+          function()
+            return base_prefix
+          end
+      end
+      local get_require_name =
         function(qualified_name)
-          local prefix, name =
-            str_match(qualified_name, prefix_name_capture)
-          if not prefix then
-            prefix = empty
-            if str_find(qualified_name, '%.') then
-              name = empty
-            else
-              name = qualified_name
-            end
+          local caller_prefix
+          local is_absolute_name =
+            (str_sub(qualified_name, 1, 2) == '!.')
+          if is_absolute_name then
+            qualified_name = str_sub(qualified_name, 3)
+            caller_prefix = get_base_prefix()
+          else
+            caller_prefix = get_caller_prefix()
           end
-          return prefix, name
+          local prefix, name = split_name(qualified_name)
+          prefix = apply_rel_prefix(caller_prefix, prefix)
+          return prefix .. name
+        end
+      request =
+        function(qualified_name)
+          local require_name = get_require_name(qualified_name)
+          stack_add(split_name(require_name))
+          local Results = tbl_pack(require(require_name))
+          stack_remove()
+          return tbl_unpack(Results)
         end
     end
-    local apply_rel_prefix
     do
-      local uplevel_capture = '(.+%.)[^%.]-%.$'
-      apply_rel_prefix =
-        function(base_prefix, rel_prefix)
-          while (str_sub(rel_prefix, 1, 2) == '^.') do
-            if (base_prefix == empty) then
-              error("Link is outside of caller's prefix.")
-            end
-            base_prefix =
-              str_match(base_prefix, uplevel_capture) or empty
-            rel_prefix = str_sub(rel_prefix, 3)
-          end
-          return base_prefix .. rel_prefix
-        end
-    end
-    local set_base_prefix
-    local get_base_prefix
-    do
-      local base_prefix
-      set_base_prefix =
-        function(arg_base_prefix)
-          base_prefix = arg_base_prefix
-        end
-      get_base_prefix =
-        function()
-          return base_prefix
-        end
-    end
-    local get_require_name =
-      function(qualified_name)
-        local caller_prefix
-        local is_absolute_name = (str_sub(qualified_name, 1, 2) == '!.')
-        if is_absolute_name then
-          qualified_name = str_sub(qualified_name, 3)
-          caller_prefix = get_base_prefix()
-        else
-          caller_prefix = get_caller_prefix()
-        end
-        local prefix, name = split_name(qualified_name)
-        prefix = apply_rel_prefix(caller_prefix, prefix)
-        return prefix .. name
-      end
-    local init_dependencies
-    local get_dependencies
-    local add_dependency
-    do
-      local Dependencies_Map
-      init_dependencies =
-        function()
-          Dependencies_Map = {}
-        end
-      get_dependencies =
-        function()
-          return Dependencies_Map
-        end
-      add_dependency =
-        function(src_name, dest_name)
-          Dependencies_Map[src_name] = Dependencies_Map[src_name] or {}
-          Dependencies_Map[src_name][dest_name] = true
-        end
-    end
-    local request =
-      function(qualified_name)
-        local require_name = get_require_name(qualified_name)
-        local src_name = get_caller_name()
-        stack_add(split_name(require_name))
-        local dest_name = get_caller_name()
-        add_dependency(src_name, dest_name)
-        local Results = tbl_pack(require(require_name))
-        stack_remove()
-        return tbl_unpack(Results)
-      end
-    do
-      if (_G.request == nil) then
-        local our_require_name = (...)
-        set_base_prefix(split_name(our_require_name))
-        init_dependencies()
-        _G.request = request
-        _G.get_require_name = get_require_name
-        _G.get_base_prefix = get_base_prefix
-        _G.get_dependencies = get_dependencies
-        stack_init()
-        stack_add(empty, our_require_name)
-        request('!.system.install_is_functions')()
-        request('!.system.install_assert_functions')()
-        _G.new = request('!.table.new')
-        stack_remove()
-      end
+      local our_require_name = (...)
+      set_base_prefix(split_name(our_require_name))
+      _G.request = request
+      _G.get_base_prefix = get_base_prefix
+      stack_init()
+      stack_add(empty, our_require_name)
+      request('!.system.install_is_functions')()
+      request('!.system.install_assert_functions')()
+      _G.new = request('!.table.new')
+      stack_remove()
     end
   end
 package.preload['workshop.system.install_is_functions'] =
@@ -271,6 +244,26 @@ package.preload['workshop.lua.regexp.quote'] =
         return s:gsub(magic_char_pattern, '%%%0')
       end
   end
+package.preload['workshop.mechs.cmdline.get_cmd_dir_exists'] =
+  function(...)
+    local normalize = request('!.concepts.path_name.normalize')
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(pathname)
+        local Command = { 'test', { '-d', normalize(pathname) } }
+        return ShellCommand.create(Command)
+      end
+  end
+package.preload['workshop.mechs.cmdline.get_cmd_mkdir'] =
+  function(...)
+    local normalize = request('!.concepts.path_name.normalize')
+    local ShellCommand = request('!.concepts.ShellCommand')
+    return
+      function(dir_name)
+        local Command = { 'mkdir', { '-p', normalize(dir_name) } }
+        return ShellCommand.create(Command)
+      end
+  end
 package.preload['workshop.number.is_natural'] =
   function(...)
     return
@@ -345,33 +338,6 @@ package.preload['workshop.table.map_values'] =
           Result[value] = true
         end
         return Result
-      end
-  end
-package.preload['workshop.table.create_instance'] =
-  function(...)
-    local clone = request('clone')
-    local attach_methods = request('attach_methods')
-    return
-      function(Data, Methods)
-        assert_table(Data)
-        assert_table(Methods)
-        local Result
-        Result = clone(Data)
-        attach_methods(Result, Methods)
-        return Result
-      end
-  end
-package.preload['workshop.table.get_values'] =
-  function(...)
-    local add_to_list = request('!.concepts.list.add_item')
-    return
-      function(List)
-        assert_table(List)
-        local Values = {}
-        for _, value in pairs(List) do
-          add_to_list(Values, value)
-        end
-        return Values
       end
   end
 package.preload['workshop.table.apply_table'] =
@@ -450,29 +416,44 @@ package.preload['workshop.table.attach_methods'] =
       function(Object, Methods)
         assert_table(Object)
         assert_table(Methods)
-        local Metatable =
-          {
-            __index = Methods,
-            __newindex =
-              function()
-                error('Table is locked for additions/removals.')
-              end,
-          }
-        setmetatable(Object, Metatable)
+        setmetatable(Object, { __index = Methods })
+      end
+  end
+package.preload['workshop.file_system.directory.create'] =
+  function(...)
+    local directory_exists = request('exists')
+    local get_mkdir_command = request('!.mechs.cmdline.get_cmd_mkdir')
+    return
+      function(dir_name)
+        assert_string(dir_name)
+        if directory_exists(dir_name) then
+          return true
+        end
+        get_mkdir_command(dir_name):Execute()
+        if directory_exists(dir_name) then
+          return true
+        end
+        return false
+      end
+  end
+package.preload['workshop.file_system.directory.exists'] =
+  function(...)
+    local get_cmd_dir_exists =
+      request('!.mechs.cmdline.get_cmd_dir_exists')
+    return
+      function(dir_name)
+        return (get_cmd_dir_exists(dir_name):Execute())
       end
   end
 package.preload['workshop.file_system.file.open'] =
   function(...)
-    local normalize_name = request('!.concepts.path_name.normalize')
     local default_mode = 'rb'
     local io_open = io.open
     return
       function(pathname, mode)
         assert_string(pathname)
-        assert(is_nil(mode) or is_string(mode))
-        pathname = normalize_name(pathname)
         mode = mode or default_mode
-        local file, err_msg = io.open(pathname, mode)
+        local file, err_msg = io_open(pathname, mode)
         if not file then
           error(err_msg, 2)
         end
@@ -500,6 +481,35 @@ package.preload['workshop.file_system.file.close'] =
           return
         end
         File:close()
+      end
+  end
+package.preload['workshop.file_system.file.create'] =
+  function(...)
+    local get_dir_name =
+      request('!.concepts.path_name.get_host_dir_str')
+    local mkdir = request('!.file_system.directory.create')
+    local open_file = request('open')
+    local close_file = request('close')
+    return
+      function(pathname, contents)
+        assert_string(pathname)
+        assert_string(contents)
+        mkdir(get_dir_name(pathname))
+        local File = open_file(pathname, 'wb')
+        File:write(contents)
+        close_file(File)
+      end
+  end
+package.preload['workshop.file_system.file.to_string'] =
+  function(...)
+    local open_file = request('open')
+    local close_file = request('close')
+    return
+      function(pathname)
+        local File = open_file(pathname, 'rb')
+        local result = File:read('a')
+        close_file(File)
+        return result
       end
   end
 package.preload['workshop.file_system.file.open_for_reading'] =
@@ -552,117 +562,188 @@ package.preload['workshop.string.split'] =
         return Result
       end
   end
+package.preload['workshop.convert.file_to_str'] =
+  function(...)
+    return request('!.file_system.file.to_string')
+  end
+package.preload['workshop.concepts.ShellCommand'] =
+  function(...)
+    local to_string
+    do
+      local quote = request('!.concepts.shell.quote')
+      local add_to_list = request('!.concepts.list.add_item')
+      local glue_words = request('!.concepts.words.to_string')
+      to_string =
+        function(Me)
+          local command = Me[1]
+          local Args = Me[2]
+          local Words = {}
+          add_to_list(Words, quote(command))
+          for _, arg in ipairs(Args) do
+            add_to_list(Words, quote(arg))
+          end
+          return glue_words(Words)
+        end
+    end
+    local execute
+    do
+      local execute_shell_command = request('!.concepts.shell.execute')
+      execute =
+        function(Me)
+          return execute_shell_command(to_string(Me))
+        end
+    end
+    local Interface
+    do
+      local create
+      do
+        local attach_methods = request('!.table.attach_methods')
+        create =
+          function(Core)
+            do
+              assert_table(Core)
+              assert(#Core == 2)
+              local command = Core[1]
+              local Args = Core[2]
+              assert_string(command)
+              assert_table(Args)
+              for _, arg in ipairs(Args) do
+                assert_string(arg)
+              end
+            end
+            attach_methods(Core, Interface)
+            return Core
+          end
+      end
+      Interface =
+        { create = create, ToString = to_string, Execute = execute }
+    end
+    return Interface
+  end
 package.preload['workshop.concepts.Indent'] =
   function(...)
-    local create_instance = request('!.table.create_instance')
-    local RangePoint = request('!.concepts.RangePoint')
-    local str_rep = string.rep
-    local RangePoint = RangePoint.create()
-    RangePoint:SetMinValue(0)
-    RangePoint:SetMaxValue(60)
-    RangePoint:SetValue(RangePoint:GetMinValue())
-    local Core = { '  ', RangePoint }
+    local get_indent_chunk =
+      function(Me)
+        return Me[1]
+      end
+    local set_indent_chunk =
+      function(Me, str)
+        Me[1] = str
+      end
+    local get_indent_level =
+      function(Me)
+        return Me[2]:GetValue()
+      end
+    local set_indent_level =
+      function(Me, level)
+        Me[2]:SetValue(level)
+      end
+    local to_string
+    do
+      local str_rep = string.rep
+      to_string =
+        function(Me)
+          return str_rep(Me[1], Me[2]:GetValue())
+        end
+    end
+    local inc =
+      function(Me)
+        set_indent_level(Me, get_indent_level(Me) + 1)
+      end
+    local dec =
+      function(Me)
+        set_indent_level(Me, get_indent_level(Me) - 1)
+      end
     local Interface
+    local create
+    do
+      local RangePointClass = request('!.concepts.RangePoint')
+      local default_indent_chunk = '  '
+      local default_min_indent = 0
+      local default_max_indent = 60
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(OptArg)
+          local min_indent = default_min_indent
+          local max_indent = default_max_indent
+          if OptArg then
+            min_indent = OptArg.min or min_indent
+            max_indent = OptArg.max or max_indent
+          end
+          local RangePoint = RangePointClass.create()
+          RangePoint:SetMinValue(min_indent)
+          RangePoint:SetMaxValue(max_indent)
+          RangePoint:SetValue(min_indent)
+          local Core = { default_indent_chunk, RangePoint }
+          attach_methods(Core, Interface)
+          return Core
+        end
+    end
     Interface =
       {
-        GetIndentChunk =
-          function(Me)
-            return Me[1]
-          end,
-        SetIndentChunk =
-          function(Me, str)
-            assert_string(str)
-            Me[1] = str
-          end,
-        GetRangePoint =
-          function(Me)
-            return Me[2]
-          end,
-        ToString =
-          function(Me)
-            local indent_level = Me:GetRangePoint():GetValue()
-            if (indent_level == 0) then
-              return ''
-            end
-            local indent_chunk = Me:GetIndentChunk()
-            return str_rep(indent_chunk, indent_level)
-          end,
-        Inc =
-          function(Me)
-            Me:GetRangePoint():Inc()
-          end,
-        Dec =
-          function(Me)
-            Me:GetRangePoint():Dec()
-          end,
-        create =
-          function(OptCore)
-            return create_instance(OptCore or Core, Interface)
-          end,
+        create = create,
+        GetIndentChunk = get_indent_chunk,
+        SetIndentChunk = set_indent_chunk,
+        GetIndentLevel = get_indent_level,
+        SetIndentLevel = set_indent_level,
+        ToString = to_string,
+        Inc = inc,
+        Dec = dec,
       }
     return Interface
   end
 package.preload['workshop.concepts.RangePoint'] =
   function(...)
+    local get_min_value =
+      function(Me)
+        return Me[2]
+      end
+    local set_min_value =
+      function(Me, val)
+        Me[2] = val
+      end
+    local get_max_value =
+      function(Me)
+        return Me[3]
+      end
+    local set_max_value =
+      function(Me, val)
+        Me[3] = val
+      end
+    local get_value
+    local set_value
+    do
+      local min = math.min
+      local max = math.max
+      get_value =
+        function(Me)
+          return min(max(Me[1], Me[2]), Me[3])
+        end
+      set_value =
+        function(Me, value)
+          Me[1] = min(max(value, Me[2]), Me[3])
+        end
+    end
     local Interface
     local create
     do
-      local DefaultCore = { 0, 0, 5 }
-      local create_instance = request('!.table.create_instance')
+      local attach_methods = request('!.table.attach_methods')
       create =
-        function(OptCore)
-          return create_instance(OptCore or DefaultCore, Interface)
+        function()
+          local Core = { 0, 0, 1 }
+          attach_methods(Core, Interface)
+          return Core
         end
     end
-    local min = math.min
-    local max = math.max
     Interface =
       {
         create = create,
-        GetMinValue =
-          function(Me)
-            return Me[2]
-          end,
-        SetMinValue =
-          function(Me, val)
-            Me[2] = val
-          end,
-        GetMaxValue =
-          function(Me)
-            return Me[3]
-          end,
-        SetMaxValue =
-          function(Me, val)
-            Me[3] = val
-          end,
-        GetValue =
-          function(Me)
-            local min_value = Me:GetMinValue()
-            local max_value = Me:GetMaxValue()
-            return min(max(Me[1], min_value), max_value)
-          end,
-        SetValue =
-          function(Me, arg_value)
-            local min_value = Me:GetMinValue()
-            local max_value = Me:GetMaxValue()
-            Me[1] = min(max(arg_value, min_value), max_value)
-          end,
-        IncBy =
-          function(Me, value)
-            Me[1] = Me[1] + value
-          end,
-        DecBy =
-          function(Me, value)
-            Me[1] = Me[1] - value
-          end,
-        Inc =
-          function(Me)
-            Me:IncBy(1)
-          end,
-        Dec =
-          function(Me)
-            Me:DecBy(1)
-          end,
+        GetMinValue = get_min_value,
+        SetMinValue = set_min_value,
+        GetMaxValue = get_max_value,
+        SetMaxValue = set_max_value,
+        GetValue = get_value,
+        SetValue = set_value,
       }
     return Interface
   end
@@ -683,6 +764,174 @@ package.preload['workshop.concepts.lua.TypeNames'] =
         'userdata',
         'table',
       }
+  end
+package.preload['workshop.concepts.shell.quote'] =
+  function(...)
+    local empty = ''
+    local single_quote
+    local backslash
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      single_quote = Ascii.single_quote
+      backslash = Ascii.backslash
+    end
+    local list_to_str = request('!.concepts.list.to_string')
+    local str_find = string.find
+    local needs_quoting
+    do
+      local special_chars_regexp
+      local starts_with_comment_regexp
+      do
+        local quote_regexp = request('!.lua.regexp.quote')
+        do
+          local SpecialChars = request('quote.SpecialChars')
+          local special_chars_str = list_to_str(SpecialChars)
+          special_chars_regexp =
+            '[' .. quote_regexp(special_chars_str) .. ']'
+        end
+        do
+          local SpaceChars = request('quote.SpaceChars')
+          local space_chars_str = list_to_str(SpaceChars)
+          local space_chars_regexp =
+            '[' .. quote_regexp(space_chars_str) .. ']'
+          local comment_char = '#'
+          starts_with_comment_regexp =
+            '^' .. space_chars_regexp .. '+' .. comment_char
+        end
+      end
+      needs_quoting =
+        function(str)
+          return
+            (str == empty) or
+            not is_nil(str_find(str, special_chars_regexp)) or
+            not is_nil(str_find(str, starts_with_comment_regexp))
+        end
+    end
+    local split_string = request('!.string.split')
+    local add_to_list = request('!.concepts.list.add_item')
+    local quote
+    quote =
+      function(str)
+        assert_string(str)
+        if not needs_quoting(str) then
+          return str
+        end
+        if not str_find(str, single_quote) then
+          return single_quote .. str .. single_quote
+        end
+        str = str .. single_quote
+        local RawItems = split_string(str, single_quote)
+        local Items = {}
+        for _, item in ipairs(RawItems) do
+          local quoted_item
+          if (item == empty) then
+            quoted_item = empty
+          else
+            quoted_item = quote(item)
+          end
+          add_to_list(Items, quoted_item)
+        end
+        return list_to_str(Items, backslash .. single_quote)
+      end
+    return quote
+  end
+package.preload['workshop.concepts.shell.execute'] =
+  function(...)
+    local get_is_aborted =
+      function(result_type_code)
+        if (result_type_code == 'signal') then
+          return true
+        elseif (result_type_code == 'exit') then
+          return false
+        else
+          error('Unknown termination status.')
+        end
+      end
+    local os_tmpname = os.tmpname
+    local os_execute = os.execute
+    local file_to_str = request('!.convert.file_to_str')
+    local os_remove = os.remove
+    return
+      function(command)
+        local output_filename = os_tmpname()
+        local error_filename = os_tmpname()
+        local shell_command =
+          command ..
+          ' ' ..
+          '1>' ..
+          output_filename ..
+          ' ' ..
+          '2>' ..
+          error_filename
+        local _, result_type_code, result_code =
+          os_execute(shell_command)
+        local Result =
+          {
+            result_code = result_code,
+            is_aborted = get_is_aborted(result_type_code),
+            output = file_to_str(output_filename),
+            error = file_to_str(error_filename),
+          }
+        os_remove(output_filename)
+        os_remove(error_filename)
+        return (Result.result_code == 0), Result
+      end
+  end
+package.preload['workshop.concepts.shell.quote.SpecialChars'] =
+  function(...)
+    local SpecialChars
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      local SpaceChars = request('SpaceChars')
+      local add_list = request('!.concepts.list.add_list')
+      SpecialChars =
+        {
+          Ascii.single_quote,
+          Ascii.double_quote,
+          Ascii.bang,
+          Ascii.dollar_sign,
+          Ascii.ampersand,
+          Ascii.asterisk,
+          Ascii.semicolon,
+          Ascii.backslash,
+          Ascii.caret,
+          Ascii.backtick,
+          Ascii.pipe,
+          Ascii.less_than,
+          Ascii.greater_than,
+          Ascii.opening_paren,
+          Ascii.closing_paren,
+          Ascii.opening_bracket,
+          Ascii.closing_bracket,
+          Ascii.opening_brace,
+          Ascii.closing_brace,
+        }
+      add_list(SpecialChars, SpaceChars)
+    end
+    return SpecialChars
+  end
+package.preload['workshop.concepts.shell.quote.SpaceChars'] =
+  function(...)
+    local SpaceChars
+    do
+      local Ascii = request('!.concepts.Ascii.Chars')
+      SpaceChars = { Ascii.tab, Ascii.space, Ascii.newline }
+    end
+    return SpaceChars
+  end
+package.preload['workshop.concepts.list.select_seg'] =
+  function(...)
+    local is_natural = request('!.number.is_natural')
+    local tbl_move = table.move
+    return
+      function(List, start_idx, len)
+        assert(is_natural(start_idx))
+        assert(is_natural(len))
+        local stop_idx = start_idx + len - 1
+        local Result = {}
+        tbl_move(List, start_idx, stop_idx, 1, Result)
+        return Result
+      end
   end
 package.preload['workshop.concepts.list.to_string'] =
   function(...)
@@ -712,6 +961,14 @@ package.preload['workshop.concepts.list.add_list'] =
         tbl_move(AnotherList, 1, #AnotherList, #OurList + 1, OurList)
       end
   end
+package.preload['workshop.concepts.words.to_string'] =
+  function(...)
+    local list_to_string = request('!.concepts.list.to_string')
+    return
+      function(Words)
+        return list_to_string(Words, ' ')
+      end
+  end
 package.preload['workshop.concepts.codec_itness.parse'] =
   function(...)
     local Syntax = request('common.Syntax')
@@ -721,29 +978,33 @@ package.preload['workshop.concepts.codec_itness.parse'] =
       local quote_close_char = Syntax.quote_close_char
       local space_char = Syntax.delimiters_space_char
       local newline_char = Syntax.delimiters_newline_char
+      local StringStreamClass =
+        request('!.concepts.StreamIo.Output.String')
       read_token =
         function(Input)
-          local token = ''
+          local StringStream = new(StringStreamClass)
           local in_quotes = false
           while true do
             local char = Input:Read(1)
             if (char == '') then
-              return token
+              return StringStream:GetString()
             end
             if in_quotes then
               if (char == quote_close_char) then
                 in_quotes = false
               else
-                token = token .. char
+                StringStream:Write(char)
               end
             else
               if (char == space_char) or (char == newline_char) then
-                return token
-              end
-              if (char == quote_open_char) then
+                local token = StringStream:GetString()
+                if (token ~= '') then
+                  return token
+                end
+              elseif (char == quote_open_char) then
                 in_quotes = true
               else
-                token = token .. char
+                StringStream:Write(char)
               end
             end
           end
@@ -783,14 +1044,33 @@ package.preload['workshop.concepts.codec_itness.parse'] =
   end
 package.preload['workshop.concepts.codec_itness.compile'] =
   function(...)
-    local DataWriter = request('compile.DataWriter.Interface')
-    local DelimitersWriter =
-      request('compile.DelimitersWriter.Interface')
     local Syntax = request('common.Syntax')
+    local DelimitersWriterClass = request('compile.DelimitersWriter')
+    local DataWriterClass = request('compile.DataWriter')
     return
       function(Node, Output)
-        local DataWriter = new(DataWriter)
-        local DelimitersWriter = new(DelimitersWriter)
+        local DelimitersWriter =
+          DelimitersWriterClass.create(
+            Syntax.delimiters_space_char,
+            Syntax.delimiters_newline_char,
+            Output
+          )
+        local DataWriter =
+          DataWriterClass.create(
+            {
+              [1] = Syntax.delimiters_space_char,
+              [2] = Syntax.delimiters_newline_char,
+              [3] = Syntax.group_open_char,
+              [4] = Syntax.group_close_char,
+              [5] = Syntax.quote_open_char,
+              [6] = Syntax.quote_close_char,
+            },
+            3,
+            4,
+            5,
+            6,
+            Output
+          )
         local compile
         compile =
           function(Node)
@@ -807,13 +1087,6 @@ package.preload['workshop.concepts.codec_itness.compile'] =
               DataWriter:EndList()
             end
           end
-        DataWriter.Output = Output
-        DataWriter.Syntax = Syntax
-        DataWriter:Init()
-        DelimitersWriter.Output = Output
-        DelimitersWriter.space_char = Syntax.delimiters_space_char
-        DelimitersWriter.newline_char = Syntax.delimiters_newline_char
-        DelimitersWriter:Init()
         compile(Node)
         DelimitersWriter:HandleEvent('nothing')
       end
@@ -831,142 +1104,125 @@ package.preload['workshop.concepts.codec_itness.common.Syntax'] =
       }
     return Syntax
   end
-package.preload[
-  'workshop.concepts.codec_itness.compile.DataWriter.WriteLeaf'
-] =
+package.preload['workshop.concepts.codec_itness.compile.DataWriter'] =
   function(...)
-    local WriteLeaf =
-      function(Me, str)
-        local quote_open_char = Me.Syntax.quote_open_char
-        local quote_close_char = Me.Syntax.quote_close_char
-        local IsSyntaxChar_Map = Me.IsSyntaxChar_Map
-        local syntax_chars_regexp = Me.syntax_chars_regexp
-        local in_quotes = false
-        local encode_char =
-          function(char)
-            local Result = char
-            if
-              not in_quotes and
-              (IsSyntaxChar_Map[char] and (char ~= quote_close_char))
-            then
-              Result = quote_open_char .. char
-              in_quotes = true
+    local start_list =
+      function(Me)
+        Me[7]:Write(Me[1])
+      end
+    local end_list =
+      function(Me)
+        Me[7]:Write(Me[2])
+      end
+    local write_leaf
+    do
+      local str_gsub = string.gsub
+      write_leaf =
+        function(Me, str)
+          local quote_open_char = Me[3]
+          local quote_close_char = Me[4]
+          local IsSyntaxChar_Map = Me[5]
+          local syntax_chars_regexp = Me[6]
+          local in_quotes = false
+          local encode_char =
+            function(char)
+              if not IsSyntaxChar_Map[char] then
+                return char
+              end
+              local Result = char
+              if not in_quotes then
+                if (char ~= quote_close_char) then
+                  Result = quote_open_char .. char
+                  in_quotes = true
+                end
+              else
+                if (char == quote_close_char) then
+                  Result = quote_close_char .. char
+                  in_quotes = false
+                end
+              end
+              return Result
             end
-            if in_quotes and (char == quote_close_char) then
-              Result = quote_close_char .. char
-              in_quotes = false
-            end
-            return Result
+          local encoded_str =
+            str_gsub(str, syntax_chars_regexp, encode_char)
+          if in_quotes then
+            encoded_str = encoded_str .. quote_close_char
+            in_quotes = false
           end
-        local encoded_str =
-          string.gsub(str, syntax_chars_regexp, encode_char)
-        if in_quotes then
-          encoded_str = encoded_str .. quote_close_char
-          in_quotes = false
+          if (str == '') then
+            encoded_str = quote_open_char .. quote_close_char
+          end
+          Me[7]:Write(encoded_str)
         end
-        if (str == '') then
-          encoded_str = quote_open_char .. quote_close_char
+    end
+    local create
+    local Interface
+    do
+      local map_values = request('!.table.map_values')
+      local list_to_str = request('!.concepts.list.to_string')
+      local quote_regexp = request('!.lua.regexp.quote')
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(
+          SyntaxChars,
+          group_open_idx,
+          group_close_idx,
+          quote_open_idx,
+          quote_close_idx,
+          OutputStream
+        )
+          local SyntaxChars_Map = map_values(SyntaxChars)
+          local syntax_chars_regexp =
+            '[' .. quote_regexp(list_to_str(SyntaxChars)) .. ']'
+          local Me =
+            {
+              [1] = SyntaxChars[group_open_idx],
+              [2] = SyntaxChars[group_close_idx],
+              [3] = SyntaxChars[quote_open_idx],
+              [4] = SyntaxChars[quote_close_idx],
+              [5] = SyntaxChars_Map,
+              [6] = syntax_chars_regexp,
+              [7] = OutputStream,
+            }
+          attach_methods(Me, Interface)
+          return Me
         end
-        Me.Output:Write(encoded_str)
-      end
-    return WriteLeaf
-  end
-package.preload[
-  'workshop.concepts.codec_itness.compile.DataWriter.Interface'
-] =
-  function(...)
-    local get_values = request('!.table.get_values')
-    local map_values = request('!.table.map_values')
-    local list_to_string = request('!.concepts.list.to_string')
-    local lua_regexp_quote = request('!.lua.regexp.quote')
-    local Interface =
+    end
+    Interface =
       {
-        Output = {},
-        Syntax = {},
-        Init =
-          function(Me)
-            local SyntaxList = get_values(Me.Syntax)
-            Me.IsSyntaxChar_Map = map_values(SyntaxList)
-            Me.syntax_chars_regexp =
-              '[' .. lua_regexp_quote(list_to_string(SyntaxList)) .. ']'
-          end,
-        StartList =
-          function(Me)
-            Me.Output:Write(Me.Syntax.group_open_char)
-          end,
-        EndList =
-          function(Me)
-            Me.Output:Write(Me.Syntax.group_close_char)
-          end,
-        WriteLeaf = request('WriteLeaf'),
-        IsSyntaxChar_Map = {},
-        syntax_chars_regexp = '',
+        create = create,
+        StartList = start_list,
+        EndList = end_list,
+        WriteLeaf = write_leaf,
       }
     return Interface
   end
 package.preload[
-  'workshop.concepts.codec_itness.compile.DelimitersWriter.Interface'
+  'workshop.concepts.codec_itness.compile.DelimitersWriter'
 ] =
   function(...)
-    local IndentClass = request('!.concepts.Indent')
-    local Interface =
-      {
-        Output = {},
-        space_char = '',
-        newline_char = '',
-        Init =
-          function(Me)
-            Me.Indent = IndentClass.create()
-            local space_char = Me.space_char
-            local spaces_per_indent = 2
-            local indent_chunk =
-              string.rep(space_char, spaces_per_indent)
-            Me.Indent:SetIndentChunk(indent_chunk)
-            Me.prev_event = 'nothing'
-            Me.is_on_empty_line = true
-          end,
-        HandleEvent = request('HandleEvent'),
-        Indent = Indent,
-        prev_event = '',
-        is_on_empty_line = false,
-      }
-    return Interface
-  end
-package.preload[
-  'workshop.concepts.codec_itness.compile.DelimitersWriter.HandleEvent'
-] =
-  function(...)
-    local Emit =
+    local emit =
       function(Me, str)
         if (str == '') then
           return
         end
-        Me.Output:Write(str)
-        Me.is_on_empty_line = false
-      end
-    local EmitNewline =
-      function(Me)
-        if Me.is_on_empty_line then
-          return
-        end
-        Emit(Me, Me.newline_char)
-        Me.is_on_empty_line = true
-      end
-    local EmitIndent =
-      function(Me)
-        EmitNewline(Me)
-        Emit(Me, Me.Indent:ToString())
+        Me[6]:Write(str)
+        Me[5] = false
       end
     local F_Empty =
       function(Me)
       end
-    local F_Indent =
-      function(Me)
-        EmitIndent(Me)
-      end
     local F_Space =
       function(Me)
-        Emit(Me, Me.space_char)
+        emit(Me, Me[1])
+      end
+    local F_Indent =
+      function(Me)
+        if not Me[5] then
+          emit(Me, Me[2])
+          Me[5] = true
+        end
+        emit(Me, Me[3]:ToString())
       end
     local EventsToFunc =
       {
@@ -999,93 +1255,236 @@ package.preload[
             ['end_list'] = F_Indent,
           },
       }
-    local OnEvent =
+    local handle_event =
       function(Me, cur_event)
-        if (Me.prev_event ~= 'nothing') then
-          Me.is_on_empty_line = false
+        local Indent = Me[3]
+        local prev_event = Me[4]
+        local is_on_empty_line = Me[5]
+        if (prev_event ~= 'nothing') then
+          is_on_empty_line = false
         end
         if (cur_event == 'end_list') then
-          Me.Indent:Dec()
+          Indent:Dec()
         end
-        local PaddingFunc = EventsToFunc[Me.prev_event][cur_event]
-        PaddingFunc(Me)
+        EventsToFunc[prev_event][cur_event](Me)
         if (cur_event == 'start_list') then
-          Me.Indent:Inc()
+          Indent:Inc()
         end
-        Me.prev_event = cur_event
+        prev_event = cur_event
+        Me[4] = prev_event
+        Me[5] = is_on_empty_line
       end
-    return OnEvent
+    local create
+    local Interface
+    do
+      local IndentClass = request('!.concepts.Indent')
+      local spaces_per_indent = 2
+      local str_rep = string.rep
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(space_char, newline_char, OutputStream)
+          local Indent = IndentClass.create()
+          local indent_chunk = str_rep(space_char, spaces_per_indent)
+          Indent:SetIndentChunk(indent_chunk)
+          local Me =
+            {
+              [1] = space_char,
+              [2] = newline_char,
+              [3] = Indent,
+              [4] = 'nothing',
+              [5] = true,
+              [6] = OutputStream,
+            }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface = { create = create, HandleEvent = handle_event }
+    return Interface
+  end
+package.preload['workshop.concepts.Ascii.Chars'] =
+  function(...)
+    local Chars
+    do
+      local Codes = request('Codes')
+      local str_char = string.char
+      Chars = {}
+      for name, code in pairs(Codes) do
+        Chars[name] = str_char(code)
+      end
+    end
+    return Chars
+  end
+package.preload['workshop.concepts.Ascii.Codes'] =
+  function(...)
+    return
+      {
+        bell = 7,
+        backspace = 8,
+        tab = 9,
+        newline = 10,
+        vertical_tab = 11,
+        form_feed = 12,
+        carriage_return = 13,
+        space = 32,
+        delete = 127,
+        plus = 43,
+        minus = 45,
+        asterisk = 42,
+        slash = 47,
+        less_than = 60,
+        equals = 61,
+        greater_than = 62,
+        dot = 46,
+        comma = 44,
+        colon = 58,
+        semicolon = 59,
+        single_quote = 39,
+        double_quote = 34,
+        backtick = 96,
+        backslash = 92,
+        number_sign = 35,
+        question_mark = 63,
+        bang = 33,
+        percent = 37,
+        ampersand = 38,
+        dollar_sign = 36,
+        at_sign = 64,
+        caret = 94,
+        underscore = 95,
+        pipe = 124,
+        tilde = 126,
+        opening_paren = 40,
+        closing_paren = 41,
+        opening_bracket = 91,
+        closing_bracket = 93,
+        opening_brace = 123,
+        closing_brace = 125,
+      }
   end
 package.preload['workshop.concepts.StreamIo.Input.File'] =
   function(...)
-    local open_file_for_reading =
-      request('!.file_system.file.open_for_reading')
-    local close_file = request('!.file_system.file.close')
-    local is_natural = request('!.number.is_natural')
-    local Interface =
-      {
-        Open =
-          function(Me, pathname)
-            Me.File = open_file_for_reading(pathname)
-          end,
-        Close =
-          function(Me)
-            close_file(Me.File)
-          end,
-        Read =
-          function(Me, num_bytes)
-            assert(is_natural(num_bytes))
-            local data_str = Me.File:read(num_bytes)
-            if is_nil(data_str) then
-              data_str = ''
-            end
-            return data_str
-          end,
-        File = nil,
-      }
-    setmetatable(
-      Interface,
-      {
-        __gc =
-          function(Me)
-            Me:Close()
-          end,
-      }
-    )
+    local open
+    do
+      local open_file_for_reading =
+        request('!.file_system.file.open_for_reading')
+      open =
+        function(Me)
+          Me[2] = open_file_for_reading(Me[1])
+        end
+    end
+    local close
+    do
+      local close_file = request('!.file_system.file.close')
+      close =
+        function(Me)
+          close_file(Me[2])
+        end
+    end
+    local read
+    do
+      local is_natural = request('!.number.is_natural')
+      read =
+        function(Me, num_bytes)
+          assert(is_natural(num_bytes))
+          local data_str = Me[2]:read(num_bytes)
+          if is_nil(data_str) then
+            data_str = ''
+          end
+          return data_str
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(pathname)
+          assert_string(pathname)
+          local Me = { pathname, 0 }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Open = open, Close = close, Read = read }
     return Interface
   end
 package.preload['workshop.concepts.StreamIo.Output.File'] =
   function(...)
-    local open_file_for_writing =
-      request('!.file_system.file.open_for_writing')
-    local close_file = request('!.file_system.file.close')
-    local Interface =
-      {
-        Open =
-          function(Me, pathname)
-            Me.File = open_file_for_writing(pathname)
-          end,
-        Close =
-          function(Me)
-            close_file(Me.File)
-          end,
-        Write =
-          function(Me, data_str)
-            assert_string(data_str)
-            Me.File:write(data_str)
-          end,
-        File = 0,
-      }
-    setmetatable(
-      Interface,
-      {
-        __gc =
-          function(Me)
-            Me:Close()
-          end,
-      }
-    )
+    local open
+    do
+      local create_file = request('!.file_system.file.create')
+      local open_for_writing =
+        request('!.file_system.file.open_for_writing')
+      open =
+        function(Me)
+          create_file(Me[1], '')
+          Me[2] = open_for_writing(Me[1])
+        end
+    end
+    local close
+    do
+      local close_file = request('!.file_system.file.close')
+      close =
+        function(Me)
+          close_file(Me[2])
+        end
+    end
+    local write =
+      function(Me, data_str)
+        assert_string(data_str)
+        Me[2]:write(data_str)
+      end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function(pathname)
+          assert_string(pathname)
+          local Me = { pathname, 0 }
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Open = open, Close = close, Write = write }
     return Interface
+  end
+package.preload['workshop.concepts.StreamIo.Output.String'] =
+  function(...)
+    local write
+    do
+      local add_to = request('!.concepts.list.add_item')
+      write =
+        function(Me, data_str)
+          assert_string(data_str)
+          add_to(Me, data_str)
+        end
+    end
+    local get_string
+    do
+      local list_to_string = request('!.concepts.list.to_string')
+      get_string =
+        function(Me)
+          return list_to_string(Me)
+        end
+    end
+    local Interface
+    local create
+    do
+      local attach_methods = request('!.table.attach_methods')
+      create =
+        function()
+          local Me = {}
+          attach_methods(Me, Interface)
+          return Me
+        end
+    end
+    Interface =
+      { create = create, Write = write, GetString = get_string }
+    return create()
   end
 package.preload['workshop.concepts.path_name.pathname_to_str'] =
   function(...)
@@ -1171,6 +1570,35 @@ package.preload['workshop.concepts.path_name.pathname_from_str'] =
         end
       end
   end
+package.preload['workshop.concepts.path_name.get_host_dir'] =
+  function(...)
+    local self_dir = request('Syntels').self_dir
+    local is_directory = request('is_directory')
+    local is_absolute = request('is_absolute')
+    local select_seg = request('!.concepts.list.select_seg')
+    local add_to_list = request('!.concepts.list.add_item')
+    return
+      function(Pathname)
+        local HostDir
+        local host_dir_end_idx
+        if is_directory(Pathname) then
+          host_dir_end_idx = #Pathname - 2
+        else
+          host_dir_end_idx = #Pathname - 1
+        end
+        if (host_dir_end_idx <= 0) then
+          if is_absolute(Pathname) then
+            HostDir = { '' }
+          else
+            HostDir = { self_dir }
+          end
+        else
+          HostDir = select_seg(Pathname, 1, host_dir_end_idx)
+        end
+        add_to_list(HostDir, '')
+        return HostDir
+      end
+  end
 package.preload['workshop.concepts.path_name.normalize'] =
   function(...)
     local pathname_from_str = request('pathname_from_str')
@@ -1178,6 +1606,17 @@ package.preload['workshop.concepts.path_name.normalize'] =
     return
       function(path_name)
         return pathname_to_str(pathname_from_str(path_name))
+      end
+  end
+package.preload['workshop.concepts.path_name.get_host_dir_str'] =
+  function(...)
+    local pathname_from_str = request('pathname_from_str')
+    local pathname_to_str = request('pathname_to_str')
+    local get_host_dir = request('get_host_dir')
+    return
+      function(pathname)
+        return
+          pathname_to_str(get_host_dir(pathname_from_str(pathname)))
       end
   end
 package.preload['workshop.concepts.path_name.is_absolute'] =
