@@ -9,7 +9,7 @@
       <table>
         <tr>
           <th>Updated</th>
-          <td>2026-10-14</td>
+          <td>2026-11-13</td>
         </tr>
         <tr>
           <th>Created</th>
@@ -52,7 +52,7 @@
 </table>
 
 _Itness_ is a strings tree serialization format. It aims for minimalism,
-not featurism. [Example][Example].
+not featurism. [Example][example].
 
 ```
 "Itness", tree serialization format
@@ -109,10 +109,10 @@ Special characters quoting:
 
 ## Interesting design features
 
-* [Syntax specification][Syntax] is the only place where we use hardcoded characters
-* [Abstracted input and output][StreamIo]
-* Formatting is [separated][DataDelims] from data serialization
-  * Formatting via [events handler][EventHandler] and decision matrix
+* [Syntax specification][syntax] is the only place where we use hardcoded characters
+* [Abstracted input and output][streams]
+* Formatting is [separated][data_delims] from data serialization
+  * Formatting via [events handler][event_handler] and decision matrix
 
 
 ## Shipment
@@ -124,16 +124,10 @@ Repository contains
   * Complete source code in [`src/`](src)
   * Rebuild script and tools in [`builder/`](builder/)
 
-[`RecodeIs`][RecodeIs] is a command-line tool that recodes data in this format.
+[`recode_is`][recode_is] is a command-line tool that recodes data in this format.
+Used mostly for testing. Arguments for it are `input_file_name output_file_name`.
 
-It's used mostly for testing.
-Input format for it is `input_file_name output_file_name`.
-
-Main usage is load/save data to/from Lua table.
-
-Serializing Lua table is [another][lts] project.
-And code for it weights more than this codec.
-(That's why we have this codec.)
+Main codec usage is load/save data to/from Lua table.
 
 
 ## Requirements
@@ -144,21 +138,22 @@ And code for it weights more than this codec.
 
 ## See also
 
-* [`workshop`][workshop] -- My personal Lua framework where this codec lives
-* [My other repositories][repos]
+* [Lua table serializer][lts]
+* [`workshop`][workshop] -- My personal Lua framework
+* [My other projects][repos]
 
 [DeepWiki_Logo]: https://deepwiki.com/badge.svg
 [DeepWiki_Repo]: https://deepwiki.com/martin-eden/Lua-Itness
 
-[Example]: Sample.md
+[example]: Sample.md
 
-[RecodeIs]: src/RecodeIs.lua
+[recode_is]: src/recode_is.lua
+
+[syntax]: src/workshop/concepts/codec_itness/syntax.lua
+[streams]: src/workshop/concepts/streams/
+[data_delims]: src/workshop/concepts/codec_itness/compile/
+[event_handler]: src/workshop/concepts/codec_itness/compile/delimiters_writer.lua
+
 [lts]: https://github.com/martin-eden/lua_table_serializer
-
-[Syntax]: workshop/concepts/codec_itness/common/Syntax.lua
-[StreamIo]: workshop/concepts/StreamIo/
-[DataDelims]: workshop/concepts/codec_itness/compile/
-[EventHandler]: workshop/concepts/codec_itness/compile/DelimitersWriter/HandleEvent.lua
-
 [workshop]: https://github.com/martin-eden/workshop
 [repos]: https://github.com/martin-eden/contents
