@@ -4,13 +4,13 @@
 
 #
 # Author: Martin Eden
-# Last mod.: 2026-10-14
+# Last mod.: 2026-11-13
 #
 
 #
 # Results are placed in "deploy/"
 #
-# We will create file "RecodeIs.lua" there.
+# We will create file "recode_is.lua" there.
 # It's combined Lua code without comments.
 #
 # Toolchain uses my "lua code melder" tool to combine files into one:
@@ -44,19 +44,27 @@ rm -r -f deploy/
 cd ../builder
 
 # Combine all Lua code
-./meld ../src/ RecodeIs > ../deploy/RecodeIs.melded.lua
+./meld ../src/ recode_is > ../deploy/recode_is.melded.lua
 
 # Reformat code and strip comments
 ./reformat_lua \
-  ../deploy/RecodeIs.melded.lua \
-  ../deploy/RecodeIs.melded.stripped.lua \
-  --~keep-comments \
+  ../deploy/recode_is.melded.lua \
+  ../deploy/recode_is.melded.stripped.lua \
   --right-margin=72
-rm ../deploy/RecodeIs.melded.lua
+rm ../deploy/recode_is.melded.lua
+
+
+# Add shebang
+echo '#!/usr/local/bin/lua'"\n" > ../deploy/recode_is.melded.stripped.shebanged.lua
+cat ../deploy/recode_is.melded.stripped.lua >> ../deploy/recode_is.melded.stripped.shebanged.lua
+rm ../deploy/recode_is.melded.stripped.lua
 
 mv \
-  ../deploy/RecodeIs.melded.stripped.lua \
-  ../deploy/RecodeIs.lua
+  ../deploy/recode_is.melded.stripped.shebanged.lua \
+  ../deploy/recode_is
+
+# Mark as executable
+chmod +x ../deploy/recode_is
 
 #
 # /
@@ -65,7 +73,7 @@ mv \
 cd ..
 
 # Test
-lua deploy/RecodeIs.lua samples/it.is samples/recoded.it.is
+deploy/recode_is samples/it.is samples/recoded.it.is
 
 # 2026 # # # # #
 # 2026-09-23
