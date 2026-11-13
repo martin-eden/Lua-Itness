@@ -2,7 +2,7 @@
 
 --[[
   Author: Martin Eden
-  Last mod.: 2026-10-14
+  Last mod.: 2026-11-13
 ]]
 
 --[[
@@ -22,33 +22,32 @@
   loaded as module. If needed, make changes to it to behave so.
 ]]
 
-local Modules = { 'RecodeIs' }
+local modules = { 'recode_is' }
 arg[1] = '../samples/it.is'
 arg[2] = '../samples/recoded.it.is'
 
 --
 package.path = package.path .. ';../../../?.lua'
 --
-local ModulePaths
+local module_paths
 do
   local observe_modules = require('workshop.system.observe_modules')
-  ModulePaths = observe_modules(Modules)
+  module_paths = observe_modules(modules)
 end
 --
 require('workshop.base')
 
-local FilesList
+local files = { }
 do
   local add_to = request('!.concepts.list.add_item')
-  FilesList = { }
-  for _, ModuleLoc in ipairs(ModulePaths) do
-    add_to(FilesList, ModuleLoc[2])
+  for _, module_loc in ipairs(module_paths) do
+    add_to(files, module_loc[2])
   end
 end
 
 local deploy = request('!.mechs.deploy')
 
-deploy(FilesList)
+deploy(files)
 --
 
 --[[
